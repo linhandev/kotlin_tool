@@ -3,37 +3,9 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
 
-from config import include_fdr, binary_fdr
+from config import include_fdr, binary_fdr, library_info, group_info, additional_headers
 
 out_fdr = Path("./out")
-
-# info that we know for a fact is wrong so we provide our own
-library_info = {
-    "database/rdb/oh_values_bucket.h": "libnative_rdb_ndk.z.so",
-    "database/rdb/relational_store_error_code.h": "libnative_rdb_ndk.z.so",
-    "database/rdb/oh_cursor.h": "libnative_rdb_ndk.z.so",
-    "database/rdb/oh_value_object.h": "libnative_rdb_ndk.z.so",
-    "database/rdb/relational_store.h": "libnative_rdb_ndk.z.so",
-    "database/rdb/oh_predicates.h": "libnative_rdb_ndk.z.so",
-    "database/data/data_asset.h": "libnative_rdb_ndk.z.so",
-    "syscap_ndk.h": "libdeviceinfo_ndk.z.so",
-    "ConnectivityKit/bluetooth/oh_bluetooth.h": "libbluetooth_ndk.so",
-    "hilog/log.h": "libhilog_ndk.z.so",
-    "accesstoken/ability_access_control.h": "libability_access_control.so",
-    "hitrace/trace.h": "libhitrace_ndk.z.so",
-    "usb_serial/usb_serial_api.h": "libusb_serial_ndk.z.so",
-    "usb_serial/usb_serial_types.h": "libusb_serial_ndk.z.so",
-    "multimodalinput/oh_input_manager.h": "libohinput.so",
-    "multimodalinput/oh_axis_type.h": "libohinput.so",
-    "purgeable_memory/purgeable_memory.h": "libpurgeable_memory_ndk.z.so",
-    "multimedia/image_framework/image_pixel_map_napi.h": "libpixelmap_ndk.z.so",
-    "multimedia/image_framework/image_pixel_map_mdk.h": "libpixelmap_ndk.z.so",
-    "multimedia/drm_framework/native_drm_err.h": "libnative_drm.so",
-    "multimedia/drm_framework/native_mediakeysession.h": "libnative_drm.so",
-    "multimedia/drm_framework/native_mediakeysystem.h": "libnative_drm.so",
-    "multimedia/drm_framework/native_drm_common.h": "libnative_drm.so"
-}
-group_info = {"syscap_ndk.h": "Init"}
 
 
 def get_all_headers(sysroot_path: Path) -> Tuple[List[Path], List[Path], List[Path]]:
@@ -107,7 +79,7 @@ def parse_header_file_info(
         library = library_matches[0] if library_matches else None
     
     if library == "NA":
-        print(f"Library for {relative_path} is NA")
+        print(f"Warning: Library for {relative_path} is NA")
     else:
         binary_path = binary_fdr / library
         assert (
@@ -167,7 +139,6 @@ def process_all_header_files() -> List[Dict[str, any]]:
         info: Optional[Dict[str, any]] = parse_header_file_info(file_path, include_fdr)
         if info:
             results.append(info)
-            print(f"Processed: {info['path']}")
 
     return results
 
@@ -183,14 +154,37 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
         groups[header_info["group"]].append(header_info)
 
     for group_name, headers in groups.items():
-        # Generate .def file content
+        # package
         def_content = f"package = platform.{group_name}\n"
 
-        # Collect all header paths for this group
+        # headers
         header_paths = [str(header["path"]) for header in headers]
+        if group_name in additional_headers:
+            header_paths.extend(additional_headers[group_name])
         def_content += f"headers = {' '.join(header_paths)}\n"
+        
+        # headerFilter
+        folders = set()
+        files_without_folders = []
+        
+        for header_path in header_paths:
+            path_obj = Path(header_path)
+            if len(path_obj.parts) > 1:  # Has folder(s)
+                # Use the full directory path (excluding filename)
+                folder_path = str(path_obj.parent)
+                folders.add(folder_path)
+            else:  # File without folder
+                files_without_folders.append(path_obj.name)
+        
+        if folders:
+            # If there are folders, use folder/** pattern
+            folder_filters = [f"{folder}/**" for folder in sorted(folders)]
+            def_content += f"headerFilter = {' '.join(folder_filters)}\n"
+        elif files_without_folders:
+            # If only files without folders, list all file names
+            def_content += f"headerFilter = {' '.join(sorted(files_without_folders))}\n"
 
-        # Extract library information (use the first library found in the group)
+        # linkerOpts
         library = None
         for header in headers:
             if header["library"] and header["library"] != "NA":
@@ -201,11 +195,16 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
             # Strip 'lib' prefix and '.so' suffix for linkerOpts
             linker_lib = library
             if linker_lib.startswith("lib"):
-                linker_lib = linker_lib[3:]  # Remove 'lib' prefix
+                linker_lib = linker_lib[3:]
+            else:
+                print(f"Warning: Library '{library}' does not start with 'lib'")
             if linker_lib.endswith(".so"):
-                linker_lib = linker_lib[:-3]  # Remove '.so' suffix
+                linker_lib = linker_lib[:-3]
+            else:
+                print(f"Warning: Library '{library}' does not end with '.so'")
             def_content += f"linkerOpts = -l{linker_lib}\n"
-
+        def_content += "language = C++\ncompilerOpts = -std=c++17\n"
+        
         # Write .def file
         def_filename = f"{group_name}.def"
         def_filepath = out_fdr / def_filename
@@ -213,11 +212,8 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
         try:
             with def_filepath.open("w", encoding="utf-8") as f:
                 f.write(def_content)
-            print(
-                f"Generated: {def_filename} (headers: {len(headers)}, library: {library or 'None'})"
-            )
         except Exception as e:
-            print(f"Error writing {def_filename}: {e}")
+            print(f"Warning: Error writing {def_filename}: {e}")
 
 
 if __name__ == "__main__":
@@ -232,13 +228,3 @@ if __name__ == "__main__":
         if file_path.is_file():
             file_path.unlink()
     generate_def_files(parsed_results, out_fdr)
-
-    print("\nSample results:")
-    for i, result in enumerate(parsed_results[:10]):
-        print(f"\nFile {i+1}:")
-        print(f"  Path: {result['path']}")
-        print(f"  Group: {result['group']}")
-        print(f"  Library: {result['library']}")
-        print(
-            f"  Includes: {result['includes'][:3]}{'...' if len(result['includes']) > 3 else ''}"
-        )
