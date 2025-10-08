@@ -234,11 +234,11 @@ if __name__ == "__main__":
     generate_def_files(parsed_results, out_fdr)
 
     print("\nSample results:")
-    for i, result in enumerate(parsed_results[:5]):  # Show first 5 results
+    for i, result in enumerate(parsed_results[:10]):
         print(f"\nFile {i+1}:")
         print(f"  Path: {result['path']}")
         print(f"  Group: {result['group']}")
         print(f"  Library: {result['library']}")
         print(
             f"  Includes: {result['includes'][:3]}{'...' if len(result['includes']) > 3 else ''}"
-        )  # Show first 3 includes
+        )
