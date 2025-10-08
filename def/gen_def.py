@@ -3,9 +3,7 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
 
-from config import include_fdr, binary_fdr, library_info, group_info, additional_headers
-
-out_fdr = Path("./out")
+from config import include_fdr, binary_fdr, library_info, group_info, additional_headers, additional_compilerOpts, out_fdr
 
 
 def get_all_headers(sysroot_path: Path) -> Tuple[List[Path], List[Path], List[Path]]:
@@ -153,14 +151,50 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
     for header_info in parsed_results:
         groups[header_info["group"]].append(header_info)
 
+    # Build mapping for dependency analysis
+    header_to_group: Dict[str, str] = {}  # Both full path and filename to group
+    
+    for header in parsed_results:
+        full_path = str(header["path"])
+        filename = Path(header["path"]).name
+        group = header["group"]
+        
+        header_to_group[full_path] = group
+        
+        if filename in header_to_group:
+            if header_to_group[filename] != group:
+                print(f"Warning: Filename '{filename}' exists in multiple different groups: {header_to_group[filename]} and {group}")
+        else:
+            header_to_group[filename] = group
+
     for group_name, headers in groups.items():
         # package
         def_content = f"package = platform.{group_name}\n"
 
+        # depends
+        all_includes = set()
+        for header in headers:
+            all_includes.update(header["includes"])
+        
+        # Find which groups are dependencies
+        dependent_groups = set()
+        for include_path in all_includes:
+            if include_path in header_to_group:
+                dependent_group = header_to_group[include_path]
+            else:
+                dependent_group = header_to_group.get(Path(include_path).name)
+            
+            if dependent_group and dependent_group != group_name:
+                dependent_groups.add(dependent_group)
+        
+        if dependent_groups:
+            depends_list = sorted(dependent_groups)
+            def_content += f"depends = {' '.join(depends_list)}\n"
+
         # headers
         header_paths = [str(header["path"]) for header in headers]
         if group_name in additional_headers:
-            header_paths.extend(additional_headers[group_name])
+            header_paths = additional_headers[group_name] + header_paths
         def_content += f"headers = {' '.join(header_paths)}\n"
         
         # headerFilter
@@ -190,6 +224,10 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
             if header["library"] and header["library"] != "NA":
                 library = header["library"]
                 break
+        
+        # compilerOpts
+        if group_name in additional_compilerOpts:
+            def_content += f"compilerOpts = {additional_compilerOpts[group_name]}\n"
 
         if library:
             # Strip 'lib' prefix and '.so' suffix for linkerOpts
@@ -224,7 +262,7 @@ if __name__ == "__main__":
     # Generate .def files
     out_fdr.mkdir(exist_ok=True)
     # Remove all existing files in out_fdr
-    for file_path in out_fdr.glob("*"):
-        if file_path.is_file():
-            file_path.unlink()
+    # for file_path in out_fdr.glob("*"):
+    #     if file_path.is_file():
+    #         file_path.unlink()
     generate_def_files(parsed_results, out_fdr)
