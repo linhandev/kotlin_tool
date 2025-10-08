@@ -18,7 +18,20 @@ library_info = {
     "database/data/data_asset.h": "libnative_rdb_ndk.z.so",
     "syscap_ndk.h": "libdeviceinfo_ndk.z.so",
     "ConnectivityKit/bluetooth/oh_bluetooth.h": "libbluetooth_ndk.so",
-    "hilog/log.h": "libhilog_ndk.z.so"
+    "hilog/log.h": "libhilog_ndk.z.so",
+    "accesstoken/ability_access_control.h": "libability_access_control.so",
+    "hitrace/trace.h": "libhitrace_ndk.z.so",
+    "usb_serial/usb_serial_api.h": "libusb_serial_ndk.z.so",
+    "usb_serial/usb_serial_types.h": "libusb_serial_ndk.z.so",
+    "multimodalinput/oh_input_manager.h": "libohinput.so",
+    "multimodalinput/oh_axis_type.h": "libohinput.so",
+    "purgeable_memory/purgeable_memory.h": "libpurgeable_memory_ndk.z.so",
+    "multimedia/image_framework/image_pixel_map_napi.h": "libpixelmap_ndk.z.so",
+    "multimedia/image_framework/image_pixel_map_mdk.h": "libpixelmap_ndk.z.so",
+    "multimedia/drm_framework/native_drm_err.h": "libnative_drm.so",
+    "multimedia/drm_framework/native_mediakeysession.h": "libnative_drm.so",
+    "multimedia/drm_framework/native_mediakeysystem.h": "libnative_drm.so",
+    "multimedia/drm_framework/native_drm_common.h": "libnative_drm.so"
 }
 group_info = {"syscap_ndk.h": "Init"}
 
