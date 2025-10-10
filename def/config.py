@@ -1,9 +1,10 @@
 from pathlib import Path
 
-sysroot_fdr = Path("/Users/user/Desktop/software/command-line-tools-6.0.0.858/sdk/default/openharmony/native/sysroot-ohos-aarch64-6.0.0.858/usr/")
+sysroot_fdr = Path("/Volumes/disk/cache/konan/dependencies/sysroot-ohos-aarch64-6.0.0.858/usr/")
 # sysroot_fdr = Path("/Users/user/Desktop/software/command-line-tools-6.0.0.858/sdk/default/hms/native/sysroot/usr/")
-llvm_bin_fdr = Path("/Users/user/.konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
-out_fdr = Path("/Users/user/git/kmp/22/kotlin-native/platformLibs/src/platform/ohos")
+llvm_bin_fdr = Path("/Volumes/disk/cache/konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
+# llvm_bin_fdr = Path("/Users/user/.konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
+out_fdr = Path("/Volumes/disk/work/temp/check_def ")
 
 include_fdr = sysroot_fdr / "include"
 binary_fdr = sysroot_fdr / "lib" / "aarch64-linux-ohos"
@@ -34,7 +35,15 @@ library_info = {
     "multimedia/drm_framework/native_mediakeysystem.h": "libnative_drm.so",
     "multimedia/drm_framework/native_drm_common.h": "libnative_drm.so"
 }
-group_info = {"syscap_ndk.h": "Init"}
-# when specifying headerFilter, some stdlib types can be missing 
+group_info = {"syscap_ndk.h": "Init",
+"multimedia/image_framework/image/image_source_native.h": "Image_NativeModule",
+"multimedia/image_framework/image/image_common.h": "Image_NativeModule",
+"multimedia/image_framework/image/image_receiver_native.h": "Image_NativeModule",
+"multimedia/image_framework/image/image_packer_native.h": "Image_NativeModule",
+"multimedia/image_framework/image/image_native.h": "Image_NativeModule",
+"multimedia/image_framework/image/pixelmap_native.h": "Image_NativeModule",
+"multimedia/image_framework/image/picture_native.h": "Image_NativeModule"
+}
+# when specifying headerFilter, some stdlib types can be missing
 additional_headers = {"WindowManager": ["cstddef"], "netstack": ["cstdint", "cstddef"]}
 additional_compilerOpts = {"TeeTrusted": "-ITEEKit/tee -fpermissive"}
