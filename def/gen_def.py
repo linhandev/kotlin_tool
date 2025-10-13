@@ -75,14 +75,14 @@ def parse_header_file_info(
                 len(unique_libraries) == 1
             ), f"Multiple different @library matches found in {relative_path}: {library_matches}"
         library = library_matches[0] if library_matches else None
-    
+
     if library == "NA":
         print(f"Warning: Library for {relative_path} is NA")
-    else:
+    elif library:
         binary_path = binary_fdr / library
-        assert (
-            binary_path.exists()
-        ), f"Library '{library}' not found in for header {relative_path}"
+        if not binary_path.exists():
+            # don't raise assertion here; warn and keep going so we can collect other libs
+            print(f"Warning: Library '{library}' not found for header {relative_path}")
 
     # Parse includes
     include_pattern = r'#include\s+[<"]([^>"]+)[>"]'
@@ -99,8 +99,12 @@ def parse_header_file_info(
             current_file_dir = file_path.parent
             resolved_path = (current_file_dir / include).resolve()
             # Make it relative to sysroot_path for consistency
-            resolved_relative = resolved_path.relative_to(sysroot_path)
-            resolved_includes.append(str(resolved_relative))
+            try:
+                resolved_relative = resolved_path.relative_to(sysroot_path)
+                resolved_includes.append(str(resolved_relative))
+            except Exception:
+                # If it can't be made relative to sysroot_path, keep the resolved absolute path
+                resolved_includes.append(str(resolved_path))
         else:
             # System include or already properly formatted
             resolved_includes.append(include)
@@ -129,7 +133,7 @@ def process_all_header_files() -> List[Dict[str, any]]:
 
     assert (
         len(failed_headers) == 0
-    ), f"Failed to open headers {' '.join(failed_headers)}"
+    ), f"Failed to open headers {' '.join(map(str, failed_headers))}"
 
     # Parse information from files with @addtogroup
     results: List[Dict[str, any]] = []
@@ -144,6 +148,8 @@ def process_all_header_files() -> List[Dict[str, any]]:
 def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Path(".")):
     """
     Generate .def files for Kotlin Native based on grouped header information
+    This updated version collects ALL libraries referenced by headers in a group
+    and emits a single linkerOpts line containing all -l flags (or none if no libs).
     """
     # Group headers by group
     groups: Dict[str, List[Dict[str, any]]] = defaultdict(list)
@@ -153,14 +159,13 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
 
     # Build mapping for dependency analysis
     header_to_group: Dict[str, str] = {}  # Both full path and filename to group
-    
     for header in parsed_results:
         full_path = str(header["path"])
         filename = Path(header["path"]).name
         group = header["group"]
-        
+
         header_to_group[full_path] = group
-        
+
         if filename in header_to_group:
             if header_to_group[filename] != group:
                 print(f"Warning: Filename '{filename}' exists in multiple different groups: {header_to_group[filename]} and {group}")
@@ -175,7 +180,7 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
         all_includes = set()
         for header in headers:
             all_includes.update(header["includes"])
-        
+
         # Find which groups are dependencies
         dependent_groups = set()
         for include_path in all_includes:
@@ -183,10 +188,10 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
                 dependent_group = header_to_group[include_path]
             else:
                 dependent_group = header_to_group.get(Path(include_path).name)
-            
+
             if dependent_group and dependent_group != group_name:
                 dependent_groups.add(dependent_group)
-        
+
         if dependent_groups:
             depends_list = sorted(dependent_groups)
             def_content += f"depends = {' '.join(depends_list)}\n"
@@ -196,11 +201,11 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
         if group_name in additional_headers:
             header_paths = additional_headers[group_name] + header_paths
         def_content += f"headers = {' '.join(header_paths)}\n"
-        
+
         # headerFilter
         folders = set()
         files_without_folders = []
-        
+
         for header_path in header_paths:
             path_obj = Path(header_path)
             if len(path_obj.parts) > 1:  # Has folder(s)
@@ -209,7 +214,7 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
                 folders.add(folder_path)
             else:  # File without folder
                 files_without_folders.append(path_obj.name)
-        
+
         if folders:
             # If there are folders, use folder/** pattern
             folder_filters = [f"{folder}/**" for folder in sorted(folders)]
@@ -218,31 +223,41 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
             # If only files without folders, list all file names
             def_content += f"headerFilter = {' '.join(sorted(files_without_folders))}\n"
 
-        # linkerOpts
-        library = None
+        # linkerOpts: collect ALL libraries referenced by headers in this group
+        libs = set()
         for header in headers:
-            if header["library"] and header["library"] != "NA":
-                library = header["library"]
-                break
-        
+            lib = header.get("library")
+            if lib and lib != "NA":
+                libs.add(lib)
+
+        linker_flags: List[str] = []
+        for library in sorted(libs):
+            linker_lib = library
+            # Remove lib prefix if present
+            if linker_lib.startswith("lib"):
+                linker_lib = linker_lib[3:]
+            else:
+                # not fatal; many library names may not start with 'lib'
+                pass
+            # Remove common suffixes
+            if linker_lib.endswith(".so"):
+                linker_lib = linker_lib[:-3]
+            elif linker_lib.endswith(".a"):
+                linker_lib = linker_lib[:-2]
+            # Add -l flag
+            if linker_lib:
+                linker_flags.append(f"-l{linker_lib}")
+
         # compilerOpts
         if group_name in additional_compilerOpts:
             def_content += f"compilerOpts = {additional_compilerOpts[group_name]}\n"
 
-        if library:
-            # Strip 'lib' prefix and '.so' suffix for linkerOpts
-            linker_lib = library
-            if linker_lib.startswith("lib"):
-                linker_lib = linker_lib[3:]
-            else:
-                print(f"Warning: Library '{library}' does not start with 'lib'")
-            if linker_lib.endswith(".so"):
-                linker_lib = linker_lib[:-3]
-            else:
-                print(f"Warning: Library '{library}' does not end with '.so'")
-            def_content += f"linkerOpts = -l{linker_lib}\n"
+        if linker_flags:
+            # emit single linkerOpts line with all flags
+            def_content += f"linkerOpts = {' '.join(linker_flags)}\n"
+
         def_content += "language = C++\ncompilerOpts = -std=c++17\n"
-        
+
         # Write .def file
         def_filename = f"{group_name}.def"
         def_filepath = out_fdr / def_filename
@@ -261,8 +276,4 @@ if __name__ == "__main__":
 
     # Generate .def files
     out_fdr.mkdir(exist_ok=True)
-    # Remove all existing files in out_fdr
-    # for file_path in out_fdr.glob("*"):
-    #     if file_path.is_file():
-    #         file_path.unlink()
     generate_def_files(parsed_results, out_fdr)
