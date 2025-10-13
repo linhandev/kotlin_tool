@@ -4,7 +4,7 @@ sysroot_fdr = Path("/Volumes/disk/cache/konan/dependencies/sysroot-ohos-aarch64-
 # sysroot_fdr = Path("/Users/user/Desktop/software/command-line-tools-6.0.0.858/sdk/default/hms/native/sysroot/usr/")
 llvm_bin_fdr = Path("/Volumes/disk/cache/konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
 # llvm_bin_fdr = Path("/Users/user/.konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
-out_fdr = Path("/Volumes/disk/work/temp/check_def ")
+out_fdr = Path("/Volumes/disk/work/temp/modi_def ")
 
 include_fdr = sysroot_fdr / "include"
 binary_fdr = sysroot_fdr / "lib" / "aarch64-linux-ohos"
@@ -42,7 +42,29 @@ group_info = {"syscap_ndk.h": "Init",
 "multimedia/image_framework/image/image_packer_native.h": "Image_NativeModule",
 "multimedia/image_framework/image/image_native.h": "Image_NativeModule",
 "multimedia/image_framework/image/pixelmap_native.h": "Image_NativeModule",
-"multimedia/image_framework/image/picture_native.h": "Image_NativeModule"
+"multimedia/image_framework/image/picture_native.h": "Image_NativeModule",
+"arkui/native_render.h": "ArkUI_NativeModule",
+"usb_serial/usb_serial_api.h": "SerialDDK",
+"usb_serial/usb_serial_types.h": "SerialDDK",
+"usb/usb_ddk_api.h": "UsbDDK",
+"usb/usb_ddk_types.h": "UsbDDK",
+"scsi_peripheral/scsi_peripheral_types.h": "SCSIPeripheralDDK",
+"scsi_peripheral/scsi_peripheral_api.h": "SCSIPeripheralDDK",
+"database/preferences/oh_preferences_err_code.h": "Preferences",
+"database/preferences/oh_preferences_option.h": "Preferences",
+"database/preferences/oh_preferences.h": "Preferences",
+"database/preferences/oh_preferences_value.h": "Preferences",
+"window_manager/oh_window_pip.h": "WindowManager",
+"window_manager/oh_display_info.h": "OH_DisplayManager",
+"window_manager/oh_display_capture.h": "OH_DisplayManager",
+"multimedia/native_audio_channel_layout.h": "Core",
+"multimedia/image_framework/image_mdk.h": "Image",
+"multimedia/image_framework/image_source_mdk.h": "Image",
+"multimedia/image_framework/image_pixel_map_napi.h": "Image",
+"multimedia/image_framework/image_receiver_mdk.h": "Image",
+"multimedia/image_framework/image_pixel_map_mdk.h": "Image",
+"multimedia/image_framework/image_mdk_common.h": "Image",
+"multimedia/image_framework/image_packer_mdk.h": "Image"
 }
 # when specifying headerFilter, some stdlib types can be missing
 additional_headers = {"WindowManager": ["cstddef"], "netstack": ["cstdint", "cstddef"]}
