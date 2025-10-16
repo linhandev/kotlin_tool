@@ -1,98 +1,76 @@
 # Kotlin Differential Fuzzer
 
-Production-ready differential testing tool for Kotlin compilers.
+ANTLR-based differential testing tool for Kotlin compilers.
 
 ## Quick Start
 
 ```bash
-# Run comprehensive compilation test (30 minutes)
-python3 final_product/test.py --duration 30
+# Run all 4 steps
+python3 fuzzing_pipeline.py --all --samples 200 --tests 100
 
-# Run differential fuzzing (100 tests, 4 parallel workers)
-python3 final_product/fuzzer.py --tests 100 --parallel 4
-
-# Custom complexity
-python3 final_product/fuzzer.py --tests 200 --depth 8 --statements 40 --parallel 8
+# Run specific step
+python3 fuzzing_pipeline.py --step 1 --samples 200
+python3 fuzzing_pipeline.py --step 2 --samples 300
+python3 fuzzing_pipeline.py --step 3 --samples 200
+python3 fuzzing_pipeline.py --step 4 --tests 100 --parallel 4
 ```
 
-## Features
+## Implementation
 
-- **Grammar-driven generation**: Creates syntactically valid Kotlin code
-- **Differential testing**: Compares Kotlin 2.2.20 vs 2.0.0
-- **Parallel execution**: Optimized for multi-core systems
-- **Type-safe**: Fully typed Python 3.10+ code
-- **Comprehensive testing**: 30-minute stress tests
+### ANTLR-Based Generation
 
-## Architecture
+Uses ANTLR 4.13.2 to generate Kotlin code from grammar specifications:
+- Downloaded from https://www.antlr.org/download/antlr-4.13.2-complete.jar
+- Generates Python parsers from .g4 grammar files
+- Code generation follows grammar production rules
 
-```
-final_product/
-├── generator.py    # Code generator with scope tracking
-├── fuzzer.py       # Differential testing engine
-└── test.py         # Comprehensive test suite
+### 4-Step Pipeline
 
-experiments/        # Historical experiments and comparisons
-```
+**Step 1**: Evaluate 3 grammar specs by generating and compiling code with Kotlin 2.2.20
+- kotlin-spec (official)
+- kotlin-formal (antlr/grammars-v4)
+- kotlin (antlr/grammars-v4, known ambiguity)
 
-## Configuration
+**Step 2**: Refine best spec to achieve 95%+ compilation success
 
-### Complexity Levels
+**Step 3**: Increase complexity until ~25% success rate
 
-- **Low**: depth=3, statements=10
-- **Medium**: depth=5, statements=20
-- **High**: depth=8, statements=40
-- **Extreme**: depth=12, statements=60
+**Step 4**: Differential fuzzing comparing Kotlin 2.2.20 vs 2.0.0
+- Parallel compilation and comparison
+- Sequential execution (one test at a time)
+- Saves only tests showing differences
 
-### Parallelization
-
-All stages except program execution are parallelized:
-- Code generation: parallel
-- Compilation: parallel
-- Comparison: parallel
-- Execution: sequential (to avoid resource conflicts)
-
-## Output
-
-Differential fuzzing saves only tests showing differences:
+## Structure
 
 ```
-results/
-└── failed_tests/
-    └── test_000042/
-        ├── test.kt              # Source code
-        ├── compilation.json     # Compile results
-        ├── exec_220.json        # Execution on 2.2.20
-        ├── exec_200.json        # Execution on 2.0.0
-        └── summary.json         # Difference summary
+fuzz/
+├── fuzzing_pipeline.py       # Complete 4-step pipeline
+├── antlr_generator.py         # ANTLR-based code generator
+├── antlr-4.13.2-complete.jar  # ANTLR tool
+├── grammar/                   # Generated ANTLR parsers
+│   ├── KotlinLexer.py
+│   ├── KotlinParser.py
+│   └── *.g4 files
+├── grammars/                  # 3 grammar source specs
+│   ├── spec1_kotlin_spec/
+│   ├── spec2_kotlin_formal/
+│   └── spec3_kotlin/
+└── experiments/               # Previous experimental work
 ```
 
 ## Requirements
 
 - Python 3.10+
 - Kotlin 2.2.20 (system)
-- Kotlin 2.0.0 (installed at /home/runner/kotlin-2.0.0/)
+- Kotlin 2.0.0 (/home/runner/kotlin-2.0.0/)
 - Java runtime
+- antlr4-python3-runtime==4.13.2
 
-## Implementation Details
+## Output
 
-### Code Generation
+Results saved in `results/` directory:
+- `step1/` - Grammar evaluation data
+- `step2/` - Refinement results
+- `step3/` - High complexity results
+- `step4/failed_tests/` - Differential testing failures
 
-Uses hierarchical scope tracking to ensure:
-- Variables declared before use
-- Proper scoping (functions, blocks, loops)
-- Type consistency
-- Mutable/immutable distinction
-
-### Differential Testing
-
-Compares:
-1. Compilation success/failure
-2. Runtime crashes
-3. Output differences
-4. Exit codes
-
-### Performance
-
-- Generates ~100 tests/minute (with parallel=4)
-- 95%+ compilation success rate
-- Minimal memory footprint

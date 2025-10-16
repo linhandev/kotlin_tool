@@ -2,8 +2,11 @@
 out
 .DS_Store
 
-# Fuzz testing result directories  
+# Fuzz testing result directories and downloads
 fuzz/results/
+fuzz/grammars/kotlin-spec-release/
+fuzz/grammars/grammars-v4-master/
+fuzz/grammars/*.tar.gz
 fuzz/experiments/grammars/
 fuzz/experiments/step1_results/
 fuzz/experiments/step2_results/
