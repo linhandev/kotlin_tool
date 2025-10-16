@@ -2,12 +2,13 @@
 out
 .DS_Store
 
-# Fuzz testing large result directories  
-fuzz/grammars/
-fuzz/step1_results/
-fuzz/step2_results/
-fuzz/step3_results/
-fuzz/step4_results/
+# Fuzz testing result directories  
+fuzz/results/
+fuzz/experiments/grammars/
+fuzz/experiments/step1_results/
+fuzz/experiments/step2_results/
+fuzz/experiments/step3_results/
+fuzz/experiments/step4_results/
 *.class
 *.jar
 
