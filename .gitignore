@@ -2,6 +2,15 @@
 out
 .DS_Store
 
+# Fuzz testing large result directories  
+fuzz/grammars/
+fuzz/step1_results/
+fuzz/step2_results/
+fuzz/step3_results/
+fuzz/step4_results/
+*.class
+*.jar
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
