@@ -2,6 +2,15 @@
 
 Differential fuzzing system for testing Kotlin Native compiler backend. Generates diverse Kotlin programs and compares behavior between compiler versions to find bugs and regressions.
 
+## Features
+
+- **44 Kotlin Language Features**: Data classes, sealed classes, enums, interfaces, lambdas, generics, coroutines, and more
+- **Differential Testing**: Compare two compiler versions side-by-side
+- **Multiprocessing**: Parallel test execution for high throughput
+- **Automatic Classification**: Identifies compilation mismatches and output differences
+- **High Diversity**: Prioritizes code diversity over compilation success (target: 5%+ success rate)
+- **Type Hints**: Full Python type annotations for better code quality
+
 ## Quick Start
 
 ### 1. Setup
@@ -14,32 +23,35 @@ pip install -r requirements.txt
 ./install_compilers.sh
 ```
 
-### 2. Run Fuzzing
+### 2. Generate Kotlin Code
 
 ```bash
-# Run 100 tests with 8 workers (default)
-python3 fuzzer.py -n 100
+# Generate a single diverse program
+python3 generate.py -o test.kt -f 12
 
-# Run 1000 tests with custom settings
-python3 fuzzer.py -n 1000 -f 15 -w 16
-
-# Long-running fuzzing campaign
-python3 fuzzer.py -n 10000 -f 20 -o fuzz_results_campaign1
+# Generate 100 programs with validation
+python3 generate.py -o test.kt -n 100 -f 12 --validate
 ```
 
-## Features
+### 3. Run Fuzzing
 
-### Code Generator
+```bash
+# Quick test (10 tests)
+python3 fuzzer.py -n 10
 
-Generates diverse Kotlin programs with 40+ language features:
-- **Classes**: Data classes, sealed classes, enums, value classes, interfaces, abstract classes
-- **Functions**: Extension functions, infix functions, inline functions, tailrec, vararg
-- **Advanced**: Lambdas, generics, nullable types, smart casts, contracts
-- **Modern**: Coroutines basics, delegation, property delegation, scope functions
-- **Collections**: Ranges, sequences, transformations, operations
-- **And more**: Annotations, lazy properties, lateinit, operator overloading
+# Full campaign (1000 tests with 8 workers)
+python3 fuzzer.py -n 1000 -f 12 -w 8
 
-### Differential Fuzzing
+# Long-running fuzzing (for days)
+python3 fuzzer.py -n 100000 -f 15 -w 16 -o fuzz_results_long
+```
+
+### 4. Run Demo
+
+```bash
+# See the pipeline in action
+python3 demo.py
+```
 
 ### Differential Fuzzing
 
