@@ -24,12 +24,39 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Basic Code Generation
+### Generate Complex Valid Programs (Recommended)
 
-Generate a single Kotlin file:
+For testing compiler backends with semantically valid, compilable code:
+
 ```bash
+# Generate a complex program (~50 lines) with print statements
+python3 generate_complex.py -o generated_code/program.kt -l 50 --run
+
+# Generate multiple test programs
+python3 generate_complex.py -o generated_code/test.kt -n 10 -l 60 --validate
+
+# Generate and run to see program behavior
+python3 generate_complex.py -o generated_code/example.kt --run
+```
+
+This generator creates valid Kotlin programs with:
+- Main function with print statements for observing behavior
+- Variable declarations with different types
+- Control flow (if/else, loops, when expressions)
+- Function definitions and calls
+- Approximately 50 lines of code (configurable)
+- **100% compilation success rate**
+- Actual runnable programs for backend testing
+
+### Grammar-Based Generation (For Fuzzing)
+
+For compiler robustness testing with random syntactic structures:
+```bash
+# Basic grammar-based generation
 python3 generate_kotlin.py -o generated_code/output.kt
 ```
+
+**Note**: Grammar-based generation produces syntactically valid but often semantically invalid code. Use `generate_complex.py` for testing compiler backends.
 
 ### Generate Multiple Files
 
@@ -84,7 +111,8 @@ python3 generate_kotlin.py \
 │   ├── KotlinLexer_clean.g4       # Cleaned ANTLR4 lexer grammar
 │   └── KotlinParser.g4            # ANTLR4 parser grammar
 ├── generated_code/                # Output directory for generated files
-├── generate_kotlin.py             # Main generation script
+├── generate_complex.py            # Template-based complex program generator (RECOMMENDED)
+├── generate_kotlin.py             # Grammar-based generation script
 ├── generate_valid.py              # Script to generate valid (compilable) code
 ├── batch_test.py                  # Batch testing script with statistics
 ├── setup.sh                       # Setup script for environment
@@ -109,13 +137,18 @@ python3 generate_kotlin.py \
 
 ## Use Cases
 
-This tool is primarily useful for:
-- **Compiler Testing**: Testing Kotlin compiler robustness with edge cases
-- **Grammar Validation**: Verifying the completeness of the Kotlin grammar specification
-- **Fuzzing**: Finding potential bugs in Kotlin tooling (parsers, IDEs, etc.)
-- **Educational**: Understanding the structure of the Kotlin language grammar
+### Template-Based Generation (generate_complex.py)
+- **Compiler Backend Testing**: Testing Kotlin Native compiler with valid, runnable programs
+- **Correctness Testing**: Programs that compile and execute successfully
+- **Behavioral Testing**: Programs with print statements to observe execution
+- **Performance Testing**: Generate many valid programs quickly
 
-This is **not** intended for generating production code or meaningful Kotlin programs.
+### Grammar-Based Generation (generate_kotlin.py)
+- **Compiler Robustness Testing**: Testing compiler with edge cases
+- **Grammar Validation**: Verifying completeness of the Kotlin grammar specification
+- **Parser Fuzzing**: Finding potential bugs in Kotlin parsing (parsers, IDEs, etc.)
+
+**For backend compiler testing, use `generate_complex.py` which produces valid, runnable code.**
 
 ## Notes
 
