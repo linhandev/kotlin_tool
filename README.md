@@ -1,6 +1,19 @@
 # Kotlin Code Generator with Grammarinator
 
-This project generates random Kotlin code using [Grammarinator](https://github.com/renatahodovan/grammarinator) based on the official [Kotlin grammar specification](https://github.com/Kotlin/kotlin-spec).
+This project generates Kotlin code using two different approaches:
+
+1. **Template-Based Generation** (`generate_complex.py`) - **RECOMMENDED for backend testing**
+   - Produces semantically valid, compilable programs (~50 LOC)
+   - 100% compilation success rate
+   - Includes print statements for observing behavior
+   - Ideal for testing Kotlin Native compiler backends
+
+2. **Grammar-Based Generation** (`generate_kotlin.py`) - For fuzzing/parser testing
+   - Uses [Grammarinator](https://github.com/renatahodovan/grammarinator) with official Kotlin grammar
+   - Produces syntactically valid but often semantically invalid code
+   - Ideal for parser robustness testing
+
+**👉 See [GENERATOR_COMPARISON.md](GENERATOR_COMPARISON.md) for detailed comparison and use cases**
 
 ## Overview
 
