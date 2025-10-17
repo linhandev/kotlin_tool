@@ -17,25 +17,48 @@ echo ""
 echo "Installing Python dependencies..."
 pip install -r requirements.txt
 
+# Create grammars directory if it doesn't exist
+mkdir -p grammars
+
 # Download Kotlin grammar if not exists
 if [ ! -d "grammars/kotlin-spec-release" ]; then
     echo ""
     echo "Downloading Kotlin grammar specification..."
     cd grammars
-    curl -L -o kotlin-spec.tar.gz https://github.com/Kotlin/kotlin-spec/archive/refs/heads/release.tar.gz
-    tar -xzf kotlin-spec.tar.gz
+    if ! curl -L -o kotlin-spec.tar.gz https://github.com/Kotlin/kotlin-spec/archive/refs/heads/release.tar.gz; then
+        echo "Failed to download Kotlin grammar"
+        exit 1
+    fi
+    
+    if ! tar -xzf kotlin-spec.tar.gz; then
+        echo "Failed to extract Kotlin grammar"
+        exit 1
+    fi
     cd ..
+fi
+
+# Verify grammar files exist
+if [ ! -d "grammars/kotlin-spec-release/grammar/src/main/antlr" ]; then
+    echo "Error: Grammar files not found in expected location"
+    exit 1
 fi
 
 # Copy grammar files
 echo ""
 echo "Copying grammar files..."
-cp grammars/kotlin-spec-release/grammar/src/main/antlr/*.g4 grammars/
+if ! cp grammars/kotlin-spec-release/grammar/src/main/antlr/*.g4 grammars/; then
+    echo "Error: Failed to copy grammar files"
+    exit 1
+fi
 
 # Clean RCURL action from lexer
 echo ""
 echo "Cleaning Java actions from grammar..."
-sed 's/RCURL: .*/RCURL: "}";/' grammars/KotlinLexer.g4 > grammars/KotlinLexer_clean.g4
+if ! grep -q "RCURL:" grammars/KotlinLexer.g4; then
+    echo "Warning: RCURL rule not found in KotlinLexer.g4, skipping cleanup"
+else
+    sed 's/RCURL: .*/RCURL: "}";/' grammars/KotlinLexer.g4 > grammars/KotlinLexer_clean.g4
+fi
 
 # Process grammar with Grammarinator
 if [ ! -f "grammars/KotlinGenerator.py" ]; then
@@ -51,11 +74,21 @@ if command -v kotlinc &> /dev/null; then
     kotlinc -version
 else
     echo "Kotlin compiler not found!"
-    echo "Installing Kotlin 2.2.20 via SDKMan..."
+    echo ""
+    echo "WARNING: About to install SDKMan and Kotlin 2.2.20"
+    echo "This involves downloading and executing scripts from the internet."
+    echo "Press Ctrl+C to cancel or Enter to continue..."
+    read -r
     
     # Install SDKMan if not installed
     if [ ! -d "$HOME/.sdkman" ]; then
-        curl -s "https://get.sdkman.io" | bash
+        echo "Downloading and installing SDKMan..."
+        if ! curl -s "https://get.sdkman.io" -o /tmp/sdkman-installer.sh; then
+            echo "Failed to download SDKMan installer"
+            exit 1
+        fi
+        bash /tmp/sdkman-installer.sh
+        rm /tmp/sdkman-installer.sh
         source "$HOME/.sdkman/bin/sdkman-init.sh"
     fi
     
