@@ -7,6 +7,8 @@ fuzz/results/
 fuzz/grammars/kotlin-spec-release/
 fuzz/grammars/grammars-v4-master/
 fuzz/grammars/*.tar.gz
+fuzz/kotlin-compilers/kotlin-compiler-*.zip
+fuzz/kotlin-compilers/kotlinc-*/
 fuzz/experiments/grammars/
 fuzz/experiments/step1_results/
 fuzz/experiments/step2_results/
