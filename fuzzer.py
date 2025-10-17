@@ -319,7 +319,7 @@ class KotlinNativeFuzzer:
         print("="*60)
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         description='Differential fuzzing for Kotlin Native compiler'
     )
