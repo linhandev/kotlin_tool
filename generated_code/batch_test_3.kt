@@ -1,0 +1,4 @@
+packageabstract
+.infix.paraminlinetypealiasinit=
+
+out;
