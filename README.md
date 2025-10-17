@@ -186,4 +186,53 @@ python3 generate.py -o /tmp/test.kt -n 10 --validate
 
 # Test fuzzer (requires installed compilers)
 python3 fuzzer.py -n 5 -w 1
+
+# Run comprehensive test suite
+python3 test_fuzzer.py
+
+# Create mock fuzzer results (demo without compilers)
+python3 create_mock_results.py
+```
+
+## Troubleshooting
+
+### Compiler Installation Issues
+
+If `install_compilers.sh` fails:
+1. Check internet connectivity
+2. Verify available disk space (need ~500MB per compiler)
+3. Try downloading manually from [Kotlin releases](https://github.com/JetBrains/kotlin/releases)
+
+### Low Compilation Success Rate
+
+The generator prioritizes diversity over compilation success. To adjust:
+- Use fewer features: `-f 8` (higher success rate)
+- Use more features: `-f 20` (more diversity, lower success)
+- Target: 5%+ success rate for maximum diversity
+
+### Performance Optimization
+
+For faster fuzzing:
+- Increase workers: `-w 32` (use more CPU cores)
+- Reduce timeout: `--timeout 15` (faster but may miss slow tests)
+- Reduce features: `-f 10` (faster compilation)
+
+## Project Structure
+
+```
+kotlin_tool/
+├── generate.py              # Code generator (44 features)
+├── fuzzer.py               # Differential fuzzing pipeline
+├── test_fuzzer.py          # Test suite
+├── demo.py                 # Interactive demo
+├── create_mock_results.py  # Mock results generator
+├── install_compilers.sh    # Compiler installation
+├── setup.sh                # Legacy setup (experiment)
+├── requirements.txt        # Python dependencies
+├── README.md               # This file
+├── .gitignore             # Git ignore rules
+└── experiment/            # Previous generator iterations
+    ├── generate_kotlin.py
+    ├── generate_complex.py
+    └── ...
 ```
