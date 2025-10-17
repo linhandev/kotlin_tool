@@ -9,11 +9,14 @@ fuzz/grammars/grammars-v4-master/
 fuzz/grammars/*.tar.gz
 fuzz/kotlin-compilers/kotlin-compiler-*.zip
 fuzz/kotlin-compilers/kotlinc-*/
+fuzz/antlr-*.jar
 fuzz/experiments/grammars/
-fuzz/experiments/step1_results/
-fuzz/experiments/step2_results/
-fuzz/experiments/step3_results/
-fuzz/experiments/step4_results/
+fuzz/experiments/step1_results/*/antlr_build/
+fuzz/experiments/step1_results/*/compiled/
+fuzz/experiments/step2_results/compiled/
+fuzz/experiments/step3_results/compiled/
+fuzz/experiments/step4_results/temp/
+fuzz/experiments/step4_results/failures/
 *.class
 *.jar
 

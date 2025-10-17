@@ -1,0 +1,310 @@
+{
+  "timestamp": "2025-10-17T14:34:21.017253",
+  "num_samples": 50,
+  "generated": 50,
+  "compiled": 47,
+  "failed": 3,
+  "samples": [
+    {
+      "index": 0,
+      "file": "experiments/step2_results/generated/sample_0.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 1,
+      "file": "experiments/step2_results/generated/sample_1.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 2,
+      "file": "experiments/step2_results/generated/sample_2.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 3,
+      "file": "experiments/step2_results/generated/sample_3.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 4,
+      "file": "experiments/step2_results/generated/sample_4.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 5,
+      "file": "experiments/step2_results/generated/sample_5.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 6,
+      "file": "experiments/step2_results/generated/sample_6.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 7,
+      "file": "experiments/step2_results/generated/sample_7.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 8,
+      "file": "experiments/step2_results/generated/sample_8.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 9,
+      "file": "experiments/step2_results/generated/sample_9.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 10,
+      "file": "experiments/step2_results/generated/sample_10.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 11,
+      "file": "experiments/step2_results/generated/sample_11.kt",
+      "compiled": false,
+      "error": "experiments/step2_results/generated/sample_11.kt:9:50: error: syntax error: Expecting '\"'.\n    fun build(): String = elements.joinToString(\"\n                                                 ^\nexperiments/step2_results/generated/sample_11.kt:9:50: error: syntax error: Expecting ','.\n    fun build(): String = elements.joinToString(\"\n                                                 ^\nexperiments/step2_results/generated/sample_11.kt:10:3: error: syntax error: Expecting '\"'.\n\")\n  ^\nexperiments/step2_results/generated/sample_11.kt:10:3: error: syntax error: Expecting ')'.\n\")\n  ^\n"
+    },
+    {
+      "index": 12,
+      "file": "experiments/step2_results/generated/sample_12.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 13,
+      "file": "experiments/step2_results/generated/sample_13.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 14,
+      "file": "experiments/step2_results/generated/sample_14.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 15,
+      "file": "experiments/step2_results/generated/sample_15.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 16,
+      "file": "experiments/step2_results/generated/sample_16.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 17,
+      "file": "experiments/step2_results/generated/sample_17.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 18,
+      "file": "experiments/step2_results/generated/sample_18.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 19,
+      "file": "experiments/step2_results/generated/sample_19.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 20,
+      "file": "experiments/step2_results/generated/sample_20.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 21,
+      "file": "experiments/step2_results/generated/sample_21.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 22,
+      "file": "experiments/step2_results/generated/sample_22.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 23,
+      "file": "experiments/step2_results/generated/sample_23.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 24,
+      "file": "experiments/step2_results/generated/sample_24.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 25,
+      "file": "experiments/step2_results/generated/sample_25.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 26,
+      "file": "experiments/step2_results/generated/sample_26.kt",
+      "compiled": false,
+      "error": "experiments/step2_results/generated/sample_26.kt:9:50: error: syntax error: Expecting '\"'.\n    fun build(): String = elements.joinToString(\"\n                                                 ^\nexperiments/step2_results/generated/sample_26.kt:9:50: error: syntax error: Expecting ','.\n    fun build(): String = elements.joinToString(\"\n                                                 ^\nexperiments/step2_results/generated/sample_26.kt:10:3: error: syntax error: Expecting '\"'.\n\")\n  ^\nexperiments/step2_results/generated/sample_26.kt:10:3: error: syntax error: Expecting ')'.\n\")\n  ^\n"
+    },
+    {
+      "index": 27,
+      "file": "experiments/step2_results/generated/sample_27.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 28,
+      "file": "experiments/step2_results/generated/sample_28.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 29,
+      "file": "experiments/step2_results/generated/sample_29.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 30,
+      "file": "experiments/step2_results/generated/sample_30.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 31,
+      "file": "experiments/step2_results/generated/sample_31.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 32,
+      "file": "experiments/step2_results/generated/sample_32.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 33,
+      "file": "experiments/step2_results/generated/sample_33.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 34,
+      "file": "experiments/step2_results/generated/sample_34.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 35,
+      "file": "experiments/step2_results/generated/sample_35.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 36,
+      "file": "experiments/step2_results/generated/sample_36.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 37,
+      "file": "experiments/step2_results/generated/sample_37.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 38,
+      "file": "experiments/step2_results/generated/sample_38.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 39,
+      "file": "experiments/step2_results/generated/sample_39.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 40,
+      "file": "experiments/step2_results/generated/sample_40.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 41,
+      "file": "experiments/step2_results/generated/sample_41.kt",
+      "compiled": false,
+      "error": "experiments/step2_results/generated/sample_41.kt:9:50: error: syntax error: Expecting '\"'.\n    fun build(): String = elements.joinToString(\"\n                                                 ^\nexperiments/step2_results/generated/sample_41.kt:9:50: error: syntax error: Expecting ','.\n    fun build(): String = elements.joinToString(\"\n                                                 ^\nexperiments/step2_results/generated/sample_41.kt:10:3: error: syntax error: Expecting '\"'.\n\")\n  ^\nexperiments/step2_results/generated/sample_41.kt:10:3: error: syntax error: Expecting ')'.\n\")\n  ^\n"
+    },
+    {
+      "index": 42,
+      "file": "experiments/step2_results/generated/sample_42.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 43,
+      "file": "experiments/step2_results/generated/sample_43.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 44,
+      "file": "experiments/step2_results/generated/sample_44.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 45,
+      "file": "experiments/step2_results/generated/sample_45.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 46,
+      "file": "experiments/step2_results/generated/sample_46.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 47,
+      "file": "experiments/step2_results/generated/sample_47.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 48,
+      "file": "experiments/step2_results/generated/sample_48.kt",
+      "compiled": true,
+      "error": null
+    },
+    {
+      "index": 49,
+      "file": "experiments/step2_results/generated/sample_49.kt",
+      "compiled": true,
+      "error": null
+    }
+  ],
+  "success_rate": 94.0
+}
