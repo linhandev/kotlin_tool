@@ -36,7 +36,14 @@ KOTLIN_FEATURES = [
     'collections', 'sequences', 'property_delegation',
     'companion_object', 'nested_class', 'inner_class',
     'type_alias', 'inline_function', 'reified_generics',
-    'vararg', 'tailrec', 'default_parameters'
+    'vararg', 'tailrec', 'default_parameters',
+    # New advanced features
+    'interface', 'abstract_class', 'annotation_class', 
+    'lazy_property', 'lateinit_property', 'const_val',
+    'value_class', 'array_operations', 'string_templates',
+    'labeled_returns', 'smart_casts', 'contracts',
+    'scope_functions', 'collection_transformations',
+    'delegation_pattern', 'coroutine_basics'
 ]
 
 
@@ -276,6 +283,241 @@ def generate_default_parameters():
     return code, func_name
 
 
+def generate_interface():
+    """Generate an interface"""
+    interface_name = f"Interface{random.randint(1, 999)}"
+    code = f"""interface {interface_name} {{
+    fun perform(): Int
+    fun describe(): String = "default implementation"
+}}
+
+class {interface_name}Impl : {interface_name} {{
+    override fun perform(): Int = 42
+}}
+
+"""
+    return code, interface_name
+
+
+def generate_abstract_class():
+    """Generate an abstract class"""
+    class_name = f"Abstract{random.randint(1, 999)}"
+    code = f"""abstract class {class_name} {{
+    abstract fun compute(): Int
+    open fun describe(): String = "abstract class"
+}}
+
+class {class_name}Concrete : {class_name}() {{
+    override fun compute(): Int = 100
+}}
+
+"""
+    return code, class_name
+
+
+def generate_annotation_class():
+    """Generate an annotation class"""
+    annotation_name = f"Ann{random.randint(1, 999)}"
+    code = f"""@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class {annotation_name}(val value: String = "default")
+
+@{annotation_name}("test")
+fun annotated{random.randint(1, 999)}() = "annotated"
+
+"""
+    return code, annotation_name
+
+
+def generate_lazy_property():
+    """Generate lazy property"""
+    var_name = f"lazy{random.randint(1, 999)}"
+    code = f"""val {var_name}: Int by lazy {{
+    println("Computing lazy value")
+    42
+}}
+
+"""
+    return code, var_name
+
+
+def generate_lateinit_property():
+    """Generate lateinit property"""
+    var_name = f"lateinit{random.randint(1, 999)}"
+    code = f"""class LateinitHolder{random.randint(1, 999)} {{
+    lateinit var {var_name}: String
+    
+    fun initialize() {{
+        {var_name} = "initialized"
+    }}
+    
+    fun isInitialized(): Boolean = ::{var_name}.isInitialized
+}}
+
+"""
+    return code, var_name
+
+
+def generate_const_val():
+    """Generate const val"""
+    const_name = f"CONST{random.randint(1, 999)}"
+    code = f"""object Constants{random.randint(1, 999)} {{
+    const val {const_name} = 42
+    const val STRING_CONST = "constant"
+}}
+
+"""
+    return code, const_name
+
+
+def generate_value_class():
+    """Generate value class (inline class)"""
+    class_name = f"Value{random.randint(1, 999)}"
+    code = f"""@JvmInline
+value class {class_name}(val value: Int) {{
+    fun doubled(): Int = value * 2
+}}
+
+"""
+    return code, class_name
+
+
+def generate_array_operations():
+    """Generate array operations"""
+    code = """val arr1 = intArrayOf(1, 2, 3, 4, 5)
+val arr2 = arrayOf("a", "b", "c")
+val arrSum = arr1.sum()
+val arrFiltered = arr1.filter { it > 2 }
+
+"""
+    return code, 'arr1'
+
+
+def generate_string_templates():
+    """Generate string templates"""
+    code = """val str1 = "Hello"
+val str2 = "World"
+val templated = "$str1 $str2"
+val complex = "${str1.length} characters"
+val multiline = ${"\"\"\""}
+    |Line 1
+    |Line 2
+    |Line 3
+${"\"\"\""}.trimMargin()
+
+"""
+    return code, 'templated'
+
+
+def generate_labeled_returns():
+    """Generate labeled returns"""
+    code = """fun labeledReturn(): Int {
+    listOf(1, 2, 3, 4, 5).forEach lit@{
+        if (it == 3) return@lit
+        println(it)
+    }
+    return 42
+}
+
+"""
+    return code, 'labeledReturn'
+
+
+def generate_smart_casts():
+    """Generate smart casts"""
+    code = """fun smartCast(obj: Any): String {
+    return when (obj) {
+        is String -> "String of length ${obj.length}"
+        is Int -> "Int value: $obj"
+        is List<*> -> "List of size ${obj.size}"
+        else -> "Unknown type"
+    }
+}
+
+"""
+    return code, 'smartCast'
+
+
+def generate_contracts():
+    """Generate function with contracts"""
+    func_name = f"contract{random.randint(1, 999)}"
+    code = f"""import kotlin.contracts.*
+
+@OptIn(ExperimentalContracts::class)
+fun {func_name}(s: String?): Boolean {{
+    contract {{
+        returns(true) implies (s != null)
+    }}
+    return s != null
+}}
+
+"""
+    return code, func_name
+
+
+def generate_scope_functions():
+    """Generate scope function usage"""
+    code = """val scopeResult1 = "test".let { it.uppercase() }
+val scopeResult2 = StringBuilder().apply {
+    append("Hello")
+    append(" ")
+    append("World")
+}.toString()
+
+val scopeResult3 = listOf(1, 2, 3).run {
+    filter { it > 1 }.sum()
+}
+
+"""
+    return code, 'scopeResult1'
+
+
+def generate_collection_transformations():
+    """Generate collection transformations"""
+    code = """val numbers = listOf(1, 2, 3, 4, 5)
+val doubled = numbers.map { it * 2 }
+val evens = numbers.filter { it % 2 == 0 }
+val grouped = numbers.groupBy { it % 2 }
+val flattened = listOf(listOf(1, 2), listOf(3, 4)).flatten()
+val zipped = numbers.zip(listOf("a", "b", "c"))
+
+"""
+    return code, 'doubled'
+
+
+def generate_delegation_pattern():
+    """Generate delegation pattern"""
+    class_name = f"Delegate{random.randint(1, 999)}"
+    code = f"""interface Base{random.randint(1, 999)} {{
+    fun execute(): String
+}}
+
+class BaseImpl{random.randint(1, 999)} : Base{random.randint(1, 999)} {{
+    override fun execute() = "executed"
+}}
+
+class {class_name}(b: Base{random.randint(1, 999)}) : Base{random.randint(1, 999)} by b
+
+"""
+    return code, class_name
+
+
+def generate_coroutine_basics():
+    """Generate basic coroutine usage"""
+    code = """// Simulated coroutine basics (without suspend)
+fun coroutineSimulation(): String {
+    val result = buildString {
+        append("Start")
+        append(" -> ")
+        append("End")
+    }
+    return result
+}
+
+"""
+    return code, 'coroutineSimulation'
+
+
 # Feature generator mapping
 FEATURE_GENERATORS = {
     'data_class': generate_data_class,
@@ -299,6 +541,23 @@ FEATURE_GENERATORS = {
     'tailrec': generate_tailrec_function,
     'vararg': generate_vararg_function,
     'default_parameters': generate_default_parameters,
+    # New features
+    'interface': generate_interface,
+    'abstract_class': generate_abstract_class,
+    'annotation_class': generate_annotation_class,
+    'lazy_property': generate_lazy_property,
+    'lateinit_property': generate_lateinit_property,
+    'const_val': generate_const_val,
+    'value_class': generate_value_class,
+    'array_operations': generate_array_operations,
+    'string_templates': generate_string_templates,
+    'labeled_returns': generate_labeled_returns,
+    'smart_casts': generate_smart_casts,
+    'contracts': generate_contracts,
+    'scope_functions': generate_scope_functions,
+    'collection_transformations': generate_collection_transformations,
+    'delegation_pattern': generate_delegation_pattern,
+    'coroutine_basics': generate_coroutine_basics,
 }
 
 
@@ -331,14 +590,15 @@ def generate_diverse_program(num_features=10):
     
     # Main function that uses generated features
     code_parts.append("fun main() {\n")
-    code_parts.append('    println("Program started - testing diverse Kotlin features")\n')
+    code_parts.append('    println("=== Program started - testing diverse Kotlin features ===")\n')
+    code_parts.append('    println("Features used: {}")'.format(len(generated_names)) + '\n')
     
-    # Use some of the generated features
-    for feature, name in generated_names[:5]:  # Use first 5 features
+    # Use more of the generated features
+    for idx, (feature, name) in enumerate(generated_names[:10]):  # Use first 10 features
         try:
             if feature == 'data_class':
-                code_parts.append(f'    val obj1 = {name}(' + ', '.join([f'{random.randint(-100, 100)}' if i % 2 == 0 else f'"{random.choice(["a", "b", "c"])}"' for i in range(2)]) + ')\n')
-                code_parts.append(f'    println("Data class: $obj1")\n')
+                code_parts.append(f'    val obj{idx} = {name}(' + ', '.join([f'{random.randint(-100, 100)}' if i % 2 == 0 else f'"{random.choice(["a", "b", "c"])}"' for i in range(2)]) + ')\n')
+                code_parts.append(f'    println("Data class: $obj{idx}")\n')
             elif feature == 'enum_class':
                 code_parts.append(f'    println("Enum: ${{{name}.values()[0]}}")\n')
             elif feature == 'when_expression':
@@ -350,20 +610,45 @@ def generate_diverse_program(num_features=10):
                 code_parts.append(f'    println("Tailrec: ${{{name}(5)}}")\n')
             elif feature == 'vararg':
                 code_parts.append(f'    println("Vararg: ${{{name}(1, 2, 3)}}")\n')
+            elif feature == 'interface':
+                code_parts.append(f'    val impl{idx} = {name}Impl()\n')
+                code_parts.append(f'    println("Interface: ${{impl{idx}.perform()}}")\n')
+            elif feature == 'abstract_class':
+                code_parts.append(f'    val concrete{idx} = {name}Concrete()\n')
+                code_parts.append(f'    println("Abstract: ${{concrete{idx}.compute()}}")\n')
+            elif feature == 'lazy_property':
+                code_parts.append(f'    println("Lazy: ${{{name}}}")\n')
+            elif feature == 'scope_functions':
+                code_parts.append(f'    println("Scope: ${{scopeResult1}}")\n')
+            elif feature == 'smart_casts':
+                code_parts.append(f'    println("Smart cast: ${{smartCast("test")}}")\n')
+                code_parts.append(f'    println("Smart cast: ${{smartCast(42)}}")\n')
         except:
             pass
     
-    # Add some general usage
-    code_parts.append('    val numbers = listOf(1, 2, 3, 4, 5)\n')
-    code_parts.append('    println("Sum: ${numbers.sum()}")\n')
-    code_parts.append('    println("Filtered: ${numbers.filter { it > 2 }}")\n')
+    # Add some general usage with print statements
     code_parts.append('    \n')
+    code_parts.append('    println("\\n=== Collection operations ===")\n')
+    code_parts.append('    val numbers = listOf(1, 2, 3, 4, 5)\n')
+    code_parts.append('    println("Numbers: $numbers")\n')
+    code_parts.append('    println("Sum: ${numbers.sum()}")\n')
+    code_parts.append('    println("Filtered (>2): ${numbers.filter { it > 2 }}")\n')
+    code_parts.append('    println("Mapped (*2): ${numbers.map { it * 2 }}")\n')
+    code_parts.append('    \n')
+    code_parts.append('    println("\\n=== Range operations ===")\n')
     code_parts.append('    val range = 1..5\n')
+    code_parts.append('    println("Range: $range")\n')
     code_parts.append('    for (i in range) {\n')
-    code_parts.append('        println("Iteration: $i")\n')
+    code_parts.append('        println("  Iteration: $i")\n')
     code_parts.append('    }\n')
     code_parts.append('    \n')
-    code_parts.append('    println("Program completed")\n')
+    code_parts.append('    println("\\n=== String operations ===")\n')
+    code_parts.append('    val str = "Kotlin"\n')
+    code_parts.append('    println("Original: $str")\n')
+    code_parts.append('    println("Uppercase: ${str.uppercase()}")\n')
+    code_parts.append('    println("Length: ${str.length}")\n')
+    code_parts.append('    \n')
+    code_parts.append('    println("\\n=== Program completed successfully ===")\n')
     code_parts.append('}\n')
     
     return ''.join(code_parts)
