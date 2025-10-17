@@ -45,6 +45,15 @@ Generate code and validate it with the Kotlin compiler:
 python3 generate_kotlin.py -o generated_code/output.kt --validate
 ```
 
+### Generate Valid Code
+
+Try multiple times to generate code that compiles successfully:
+```bash
+python3 generate_valid.py -o generated_code/valid.kt -a 50
+```
+
+This script attempts multiple generations with varying parameters until it finds one that compiles.
+
 ### Advanced Options
 
 ```bash
@@ -76,6 +85,9 @@ python3 generate_kotlin.py \
 │   └── KotlinParser.g4            # ANTLR4 parser grammar
 ├── generated_code/                # Output directory for generated files
 ├── generate_kotlin.py             # Main generation script
+├── generate_valid.py              # Script to generate valid (compilable) code
+├── batch_test.py                  # Batch testing script with statistics
+├── setup.sh                       # Setup script for environment
 ├── requirements.txt               # Python dependencies
 └── README.md                      # This file
 ```
@@ -91,8 +103,19 @@ python3 generate_kotlin.py \
 ## Limitations
 
 - **Semantic Validity**: While the generated code is syntactically correct according to the grammar, it may not be semantically valid (e.g., undefined references, type mismatches).
-- **Compilation Success Rate**: Due to semantic constraints not encoded in the grammar, many generated files may not compile successfully.
+- **Compilation Success Rate**: Due to semantic constraints not encoded in the grammar, most generated files will not compile successfully. This is expected behavior for grammar-based fuzzing tools.
+- **Code Complexity**: Valid generated code tends to be minimal (empty files, simple declarations) because complex structures are less likely to be semantically valid when randomly generated.
 - **Grammar Actions**: Some language-specific actions from the original grammar (e.g., Java code for mode handling) have been removed for compatibility with Python.
+
+## Use Cases
+
+This tool is primarily useful for:
+- **Compiler Testing**: Testing Kotlin compiler robustness with edge cases
+- **Grammar Validation**: Verifying the completeness of the Kotlin grammar specification
+- **Fuzzing**: Finding potential bugs in Kotlin tooling (parsers, IDEs, etc.)
+- **Educational**: Understanding the structure of the Kotlin language grammar
+
+This is **not** intended for generating production code or meaningful Kotlin programs.
 
 ## Notes
 

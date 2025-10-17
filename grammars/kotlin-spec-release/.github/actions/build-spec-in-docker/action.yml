@@ -1,5 +1,0 @@
-name: 'Build Kotlin spec in its Docker container'
-runs:
-  using: 'docker'
-  image: '../../../docker/Dockerfile'
-  entrypoint: '/build-spec.sh'

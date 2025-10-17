@@ -15,6 +15,11 @@ fuzz/experiments/step4_results/
 *.class
 *.jar
 
+# Generated Kotlin code
+generated_code/*.kt
+grammars/kotlin-spec.tar.gz
+grammars/kotlin-spec-release/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
