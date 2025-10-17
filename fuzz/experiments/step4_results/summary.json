@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-10-17T15:04:25.261999",
+  "num_samples": 50,
+  "num_workers": 4,
+  "statistics": {
+    "generated": 50,
+    "compile_220_success": 50,
+    "compile_220_failed": 0,
+    "compile_200_success": 50,
+    "compile_200_failed": 0,
+    "both_compiled": 50,
+    "run_220_success": 50,
+    "run_220_failed": 0,
+    "run_200_success": 50,
+    "run_200_failed": 0,
+    "output_match": 50,
+    "output_differ": 0,
+    "failures_saved": 0
+  },
+  "failed_tests": []
+}

@@ -1,0 +1,150 @@
+{
+  "grammar_name": "kotlin-formal",
+  "display_name": "Kotlin Formal (grammars-v4)",
+  "generated_count": 20,
+  "compiled_count": 19,
+  "compile_errors": 1,
+  "samples": [
+    {
+      "index": 0,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_0.kt",
+      "code_length": 44,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 1,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_1.kt",
+      "code_length": 124,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 2,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_2.kt",
+      "code_length": 211,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 3,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_3.kt",
+      "code_length": 199,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 4,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_4.kt",
+      "code_length": 210,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 5,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_5.kt",
+      "code_length": 240,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 6,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_6.kt",
+      "code_length": 274,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 7,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_7.kt",
+      "code_length": 239,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 8,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_8.kt",
+      "code_length": 251,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 9,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_9.kt",
+      "code_length": 228,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 10,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_10.kt",
+      "code_length": 495,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 11,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_11.kt",
+      "code_length": 261,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 12,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_12.kt",
+      "code_length": 230,
+      "compiled": false,
+      "compile_output": "experiments/step1_results/kotlin-formal/generated/sample_12.kt:2:19: error: type 'Lazy<String>' has no method 'setValue(Example, KMutableProperty1<*, *>, String)', so it cannot serve as a delegate for var (read-write property).\n    var p: String by lazy {\n                  ^^\n"
+    },
+    {
+      "index": 13,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_13.kt",
+      "code_length": 176,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 14,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_14.kt",
+      "code_length": 204,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 15,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_15.kt",
+      "code_length": 214,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 16,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_16.kt",
+      "code_length": 159,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 17,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_17.kt",
+      "code_length": 261,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 18,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_18.kt",
+      "code_length": 358,
+      "compiled": true,
+      "compile_output": ""
+    },
+    {
+      "index": 19,
+      "file": "experiments/step1_results/kotlin-formal/generated/sample_19.kt",
+      "code_length": 205,
+      "compiled": true,
+      "compile_output": ""
+    }
+  ],
+  "success_rate": 95.0
+}
