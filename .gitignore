@@ -17,6 +17,7 @@ fuzz/experiments/step4_results/
 
 # Generated Kotlin code
 generated_code/*.kt
+!examples/generated_samples/*.kt
 grammars/kotlin-spec.tar.gz
 grammars/kotlin-spec-release/
 
