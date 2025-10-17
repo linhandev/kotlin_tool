@@ -4,6 +4,7 @@ from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
 
 from config import include_fdr, binary_fdr, library_info, group_info, additional_headers, additional_compilerOpts, out_fdr
+import subprocess
 
 
 def get_all_headers(sysroot_path: Path) -> Tuple[List[Path], List[Path], List[Path]]:
@@ -120,7 +121,7 @@ def parse_header_file_info(
     }
 
 
-def process_all_header_files() -> List[Dict[str, any]]:
+def process_all_header_files() -> Dict[str, Dict[str, any]]:
     """
     Main function to process all header files and return the list of parsed information
     """
@@ -136,16 +137,16 @@ def process_all_header_files() -> List[Dict[str, any]]:
     ), f"Failed to open headers {' '.join(map(str, failed_headers))}"
 
     # Parse information from files with @addtogroup
-    results: List[Dict[str, any]] = []
+    results: Dict[str, Dict[str, any]] = {}
     for file_path in harmony_sdk_headers:
         info: Optional[Dict[str, any]] = parse_header_file_info(file_path, include_fdr)
         if info:
-            results.append(info)
+            results[str(file_path)] = info
 
     return results
 
 
-def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Path(".")):
+def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = Path(".")):
     """
     Generate .def files for Kotlin Native based on grouped header information
     This updated version collects ALL libraries referenced by headers in a group
@@ -154,12 +155,12 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
     # Group headers by group
     groups: Dict[str, List[Dict[str, any]]] = defaultdict(list)
 
-    for header_info in parsed_results:
+    for header_info in header_infos.values():
         groups[header_info["group"]].append(header_info)
 
     # Build mapping for dependency analysis
     header_to_group: Dict[str, str] = {}  # Both full path and filename to group
-    for header in parsed_results:
+    for header in header_infos.values():
         full_path = str(header["path"])
         filename = Path(header["path"]).name
         group = header["group"]
@@ -176,30 +177,11 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
         # package
         def_content = f"package = platform.{group_name}\n"
 
-        # depends
-        all_includes = set()
-        for header in headers:
-            all_includes.update(header["includes"])
-
-        # Find which groups are dependencies
-        dependent_groups = set()
-        for include_path in all_includes:
-            if include_path in header_to_group:
-                dependent_group = header_to_group[include_path]
-            else:
-                dependent_group = header_to_group.get(Path(include_path).name)
-
-            if dependent_group and dependent_group != group_name:
-                dependent_groups.add(dependent_group)
-
-        if dependent_groups:
-            depends_list = sorted(dependent_groups)
-            def_content += f"depends = {' '.join(depends_list)}\n"
-
         # headers
-        header_paths = [str(header["path"]) for header in headers]
         if group_name in additional_headers:
-            header_paths = additional_headers[group_name] + header_paths
+            for header_path in additional_headers[group_name]:
+                headers.append(header_infos.get(header_path, {"path": Path(header_path), "includes": [], "library": None}))
+        header_paths = [str(header["path"]) for header in headers]
         def_content += f"headers = {' '.join(header_paths)}\n"
 
         # headerFilter
@@ -215,13 +197,50 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
             else:  # File without folder
                 files_without_folders.append(path_obj.name)
 
-        if folders:
-            # If there are folders, use folder/** pattern
-            folder_filters = [f"{folder}/**" for folder in sorted(folders)]
-            def_content += f"headerFilter = {' '.join(folder_filters)}\n"
-        elif files_without_folders:
-            # If only files without folders, list all file names
-            def_content += f"headerFilter = {' '.join(sorted(files_without_folders))}\n"
+        """
+        1. single file: headerFilter = containing_folder/filename.h, this is final
+        2. folders: headerFilter = folder1/** folder2/**
+        3. files without folders: headerFilter = file1.h file2.h
+        """
+        if len(header_paths) == 1:
+            headerFilter = f"headerFilter = {header_paths[0]}"
+        else:
+            headerFilter = f"headerFilter ="
+            if folders:
+                # If there are folders, use folder/** pattern
+                folder_filters = [f"{folder}/**" for folder in sorted(folders)]
+                headerFilter += f" {' '.join(folder_filters)}"
+            if files_without_folders:
+                # If there are files without folders, list all file names
+                headerFilter += f" {' '.join(sorted(files_without_folders))}"
+        def_content += f"{headerFilter.strip()}\n"
+
+        # depends
+        all_includes = set()
+        for header in headers:
+            all_includes.update(header["includes"])
+
+        # Find which groups are dependencies
+        dependent_groups = set()
+        header_files = []
+        for header in headers:
+            header_files.append(str(header["path"]))
+            header_files.append(Path(header["path"]).name)
+
+        for include_path in all_includes:
+            if include_path in header_files:
+                continue
+            if include_path in header_to_group:
+                dependent_group = header_to_group[include_path]
+            else:
+                dependent_group = header_to_group.get(Path(include_path).name)
+
+            if dependent_group and dependent_group != group_name:
+                dependent_groups.add(dependent_group)
+
+        if dependent_groups:
+            depends_list = sorted(dependent_groups)
+            def_content += f"depends = {' '.join(depends_list)}\n"
 
         # linkerOpts: collect ALL libraries referenced by headers in this group
         libs = set()
@@ -270,10 +289,17 @@ def generate_def_files(parsed_results: List[Dict[str, any]], out_fdr: Path = Pat
 
 
 if __name__ == "__main__":
-    parsed_results: List[Dict[str, any]] = process_all_header_files()
+    parsed_results = process_all_header_files()
 
     print(f"\nTotal processed files: {len(parsed_results)}")
 
-    # Generate .def files
-    out_fdr.mkdir(exist_ok=True)
+    input(f"Removing all files in {out_fdr}, Enter to continue or ctrl-c")
+
+    try:
+        subprocess.run(["git", "clean", "-dfx"], cwd=out_fdr, check=True)
+        print(f"Cleaned output directory: {out_fdr}")
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to clean git directory {out_fdr}: {e}")
+    except FileNotFoundError:
+        print("Warning: git command not found")
     generate_def_files(parsed_results, out_fdr)
