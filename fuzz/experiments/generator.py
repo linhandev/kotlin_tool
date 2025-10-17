@@ -13,10 +13,8 @@ import os
 import sys
 from typing import Optional, Set
 
-# Add grammar directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'grammar'))
-
-from KotlinParser import KotlinParser
+# Note: Grammar directory setup removed as we don't actually use ANTLR parser
+# This generator is hand-written, not ANTLR-based
 
 
 class KotlinCodeGenerator:

@@ -1,171 +1,76 @@
-# Kotlin Code Snippet Generator
+# Kotlin Differential Fuzzer
 
-A proof-of-concept tool for generating random Kotlin code snippets using ANTLR4 grammar. This tool is designed for fuzz testing Kotlin Native compilers by generating a large number of syntactically valid Kotlin code samples.
+ANTLR-based differential testing tool for Kotlin compilers.
 
-## Features
-
-- Generate syntactically correct Kotlin code snippets
-- Control code complexity (nesting depth, statement count)
-- Batch generation for large-scale testing
-- Python-based implementation for easy integration
-
-## Installation
-
-1. Install Python 3.8 or higher
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Install ANTLR4 (if not already installed):
-```bash
-# On Ubuntu/Debian
-sudo apt-get install antlr4
-
-# On macOS
-brew install antlr
-
-# Or download from https://www.antlr.org/download.html
-```
-
-## Usage
-
-### Basic Usage
-
-Generate a single Kotlin code snippet:
-```bash
-python generator.py
-```
-
-### Generate Multiple Snippets
-
-Generate 10 code snippets:
-```bash
-python generator.py --count 10
-```
-
-### Control Complexity
-
-Generate snippets with specific complexity:
-```bash
-# Low complexity (max depth: 3, max statements: 10)
-python generator.py --complexity low
-
-# Medium complexity (max depth: 5, max statements: 20)
-python generator.py --complexity medium
-
-# High complexity (max depth: 8, max statements: 40)
-python generator.py --complexity high
-
-# Custom complexity
-python generator.py --max-depth 6 --max-statements 25
-```
-
-### Save to Files
-
-Save generated snippets to separate files:
-```bash
-python generator.py --count 100 --output-dir ./kotlin_samples
-```
-
-### Run Tests
+## Quick Start
 
 ```bash
-python test_generator.py
+# Run all 4 steps
+python3 fuzzing_pipeline.py --all --samples 200 --tests 100
+
+# Run specific step
+python3 fuzzing_pipeline.py --step 1 --samples 200
+python3 fuzzing_pipeline.py --step 2 --samples 300
+python3 fuzzing_pipeline.py --step 3 --samples 200
+python3 fuzzing_pipeline.py --step 4 --tests 100 --parallel 4
 ```
 
-## How It Works
+## Implementation
 
-### Architecture
+### ANTLR-Based Generation
 
-1. **ANTLR4 Grammar**: Uses the official Kotlin grammar from the grammars-v4 repository
-2. **Random Generation**: Traverses grammar rules to generate random but syntactically valid code
-3. **Complexity Control**: Limits recursion depth and statement count to control output size
+Uses ANTLR 4.13.2 to generate Kotlin code from grammar specifications:
+- Downloaded from https://www.antlr.org/download/antlr-4.13.2-complete.jar
+- Generates Python parsers from .g4 grammar files
+- Code generation follows grammar production rules
 
-### Implementation Details
+### 4-Step Pipeline
 
-The generator works by:
+**Step 1**: Evaluate 3 grammar specs by generating and compiling code with Kotlin 2.2.20
+- kotlin-spec (official)
+- kotlin-formal (antlr/grammars-v4)
+- kotlin (antlr/grammars-v4, known ambiguity)
 
-1. **Parsing Grammar Rules**: ANTLR4 parses the Kotlin grammar to understand language structure
-2. **Random Rule Selection**: When multiple alternatives exist in a grammar rule, the generator randomly selects one
-3. **Recursive Generation**: Recursively expands rules while respecting depth limits
-4. **Terminal Generation**: Generates appropriate identifiers, literals, and keywords
+**Step 2**: Refine best spec to achieve 95%+ compilation success
 
-### Complexity Parameters
+**Step 3**: Increase complexity until ~25% success rate
 
-- **Max Depth**: Maximum nesting level of code structures (classes, functions, loops, etc.)
-- **Max Statements**: Maximum number of statements to generate in a scope
-- **Branching Factor**: Probability of choosing optional grammar elements
+**Step 4**: Differential fuzzing comparing Kotlin 2.2.20 vs 2.0.0
+- Parallel compilation and comparison
+- Sequential execution (one test at a time)
+- Saves only tests showing differences
 
-### Known Limitations
+## Structure
 
-- ANTLR4 primarily generates syntactically correct code (not semantically correct)
-- Generated code may not be meaningful or compilable without imports
-- Type checking and semantic correctness are not guaranteed
-- Generating incorrect code requires manual rule breaking (not natively supported by ANTLR4)
-
-## Examples
-
-### Example Output (Low Complexity)
-
-```kotlin
-fun main() {
-    val x = 42
-    println(x)
-}
+```
+fuzz/
+├── fuzzing_pipeline.py       # Complete 4-step pipeline
+├── antlr_generator.py         # ANTLR-based code generator
+├── antlr-4.13.2-complete.jar  # ANTLR tool
+├── grammar/                   # Generated ANTLR parsers
+│   ├── KotlinLexer.py
+│   ├── KotlinParser.py
+│   └── *.g4 files
+├── grammars/                  # 3 grammar source specs
+│   ├── spec1_kotlin_spec/
+│   ├── spec2_kotlin_formal/
+│   └── spec3_kotlin/
+└── experiments/               # Previous experimental work
 ```
 
-### Example Output (Medium Complexity)
+## Requirements
 
-```kotlin
-class MyClass {
-    var property: Int = 0
-    
-    fun method(param: String): Boolean {
-        if (param.isEmpty()) {
-            return false
-        }
-        return true
-    }
-}
-```
+- Python 3.10+
+- Kotlin 2.2.20 (system)
+- Kotlin 2.0.0 (/home/runner/kotlin-2.0.0/)
+- Java runtime
+- antlr4-python3-runtime==4.13.2
 
-### Example Output (High Complexity)
+## Output
 
-```kotlin
-interface MyInterface {
-    fun interfaceMethod(): Unit
-}
+Results saved in `results/` directory:
+- `step1/` - Grammar evaluation data
+- `step2/` - Refinement results
+- `step3/` - High complexity results
+- `step4/failed_tests/` - Differential testing failures
 
-class ComplexClass : MyInterface {
-    private val list = mutableListOf<Int>()
-    
-    override fun interfaceMethod() {
-        for (i in 0..10) {
-            list.add(i)
-            if (i % 2 == 0) {
-                println("Even: $i")
-            } else {
-                println("Odd: $i")
-            }
-        }
-    }
-    
-    companion object {
-        const val CONSTANT = "value"
-    }
-}
-```
-
-## Contributing
-
-This is a proof-of-concept tool. For production use, consider:
-- Adding semantic validation
-- Implementing type checking
-- Supporting more Kotlin features
-- Adding negative test case generation
-
-## License
-
-MIT License
