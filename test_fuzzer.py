@@ -66,11 +66,11 @@ def test_generator_compilation():
     success_rate = 100 * success_count / total_count
     print(f"\nCompilation success rate: {success_count}/{total_count} ({success_rate:.1f}%)")
     
-    if success_rate >= 5:
-        print(f"✓ Success rate above 5% target")
+    if success_rate >= 90:
+        print(f"✓ Success rate above 90% target")
         return True
     else:
-        print(f"✗ Success rate below 5% target")
+        print(f"✗ Success rate below 90% target")
         return False
 
 

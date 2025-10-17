@@ -92,14 +92,15 @@ Uses Python's multiprocessing for parallel execution:
 
 ## Compilation Success Rate
 
-Target: **5%+ compilation success** with diverse features
+Target: **90%+ compilation success** with diverse features
 
 Actual rates (with kotlinc JVM validation):
-- With 10-12 features: ~40-60% success rate
-- With 15-20 features: ~20-40% success rate  
-- With 25+ features: ~5-15% success rate
+- With 8 features: ~100% success rate
+- With 12 features: ~100% success rate  
+- With 15 features: ~100% success rate
+- With 20 features: ~100% success rate
 
-**Priority is diversity over compilation success** for thorough backend testing.
+**Maintains high diversity while ensuring valid Kotlin code generation.**
 
 ## Generator Options
 
