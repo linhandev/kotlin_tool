@@ -75,8 +75,12 @@ group_info = {
     "multimedia/image_framework/image_pixel_map_mdk.h": "Image",
     "multimedia/image_framework/image_mdk_common.h": "Image",
     "multimedia/image_framework/image_packer_mdk.h": "Image",
-    "native_buffer/buffer_common.h": "BufferCommon"
+    "native_buffer/buffer_common.h": "BufferCommon",
 }
 # when specifying headerFilter, some stdlib types can be missing
-additional_headers = {"WindowManager": ["stddef.h"], "netstack": ["cstddef"], "ArkUI_NativeModule": ["arkui/ui_input_event.h"]}
+additional_headers = {
+    "WindowManager": ["cstddef"],
+    "netstack": ["cstddef", "cstdint"],
+    "ArkUI_NativeModule": ["arkui/ui_input_event.h"], # solve circular dependency
+}
 additional_compilerOpts = {}

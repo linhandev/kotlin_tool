@@ -179,8 +179,8 @@ def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = 
 
         # headers
         if group_name in additional_headers:
-            for header_path in additional_headers[group_name]:
-                headers.append(header_infos.get(header_path, {"path": Path(header_path), "includes": [], "library": None}))
+            for header_path in additional_headers[group_name][::-1]:
+                headers.insert(0, header_infos.get(header_path, {"path": Path(header_path), "includes": [], "library": None}))
         header_paths = [str(header["path"]) for header in headers]
         def_content += f"headers = {' '.join(header_paths)}\n"
 
@@ -195,7 +195,8 @@ def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = 
                 folder_path = str(path_obj.parent)
                 folders.add(folder_path)
             else:  # File without folder
-                files_without_folders.append(path_obj.name)
+                if not path_obj.name.startswith("cstd"):
+                    files_without_folders.append(path_obj.name)
 
         """
         1. single file: headerFilter = containing_folder/filename.h, this is final
