@@ -3,9 +3,51 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
 
-from config import include_fdr, binary_fdr, library_info, group_info, additional_headers, additional_compilerOpts, out_fdr
+from config import include_fdr, binary_fdr, library_info, group_info, additional_headers, additional_compilerOpts, out_fdr, target_headers
 import subprocess
+from pathlib import Path
+import shutil
 
+def fix_teekit_includes(include_fdr: str) -> None:
+
+    teekit_dir = Path(include_fdr) / "TEEKit"
+    if not teekit_dir.exists():
+        print(f"[ERROR] 未找到目录: {teekit_dir}")
+        return
+
+    print(f"[TEEKit] 开始扫描目录：{teekit_dir}")
+    changed_files = 0
+
+    for path in teekit_dir.rglob("*.h"):
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+
+        modified = False
+        new_lines = []
+
+        for line in lines:
+            stripped = line.strip()
+
+            if stripped.startswith("#include <"):
+                for header in target_headers:
+                    target_text = f"#include <{header}>"
+                    if target_text in stripped:
+                        new_line = line.replace(f"<{header}>", f"\"{header}\"")
+                        new_lines.append(new_line)
+                        modified = True
+                        print(f"[修改] {path.name}: “{header}”")
+                        break
+                else:
+                    new_lines.append(line)
+            else:
+                new_lines.append(line)
+
+        if modified:
+            with open(path, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+            changed_files += 1
+
+    print(f"[TEEKit] 处理完成，共修改 {changed_files} 个文件。")
 
 def get_all_headers(sysroot_path: Path) -> Tuple[List[Path], List[Path], List[Path]]:
     """
@@ -290,6 +332,9 @@ def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = 
 
 
 if __name__ == "__main__":
+
+    fix_teekit_includes(include_fdr)
+
     parsed_results = process_all_header_files()
 
     print(f"\nTotal processed files: {len(parsed_results)}")
