@@ -2,6 +2,12 @@
 out
 .DS_Store
 
+# Fuzzing results and compilers
+fuzz_results/
+failed_tests/
+/usr/local/kotlinc-*/
+.local/kotlinc-*/
+
 # Fuzz testing result directories and downloads
 fuzz/results/
 fuzz/grammars/kotlin-spec-release/
