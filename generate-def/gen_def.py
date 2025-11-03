@@ -3,13 +3,23 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
 
-from config import include_fdr, binary_fdr, library_info, group_info, additional_headers, additional_compilerOpts, out_fdr
+from config import (
+    ohos_sysroot_fdr,
+    hms_sysroot_fdr,
+    library_info,
+    group_info,
+    additional_headers,
+    additional_compilerOpts,
+    ohos_platform_lib_fdr,
+)
 import subprocess
 
 
-def get_all_headers(sysroot_path: Path) -> Tuple[List[Path], List[Path], List[Path]]:
+def get_all_headers(
+    include_paths: List[Path],
+) -> Tuple[List[Path], List[Path], List[Path]]:
     """
-    Find all .h files in include_fdr folder and categorize them into three lists:
+    Find all .h files in include_paths folders and categorize them into three lists:
     1. Files with @addtogroup tags
     2. Files that open normally but don't contain @addtogroup
     3. Files that can't be opened for any reason
@@ -17,21 +27,33 @@ def get_all_headers(sysroot_path: Path) -> Tuple[List[Path], List[Path], List[Pa
     harmony_sdk_headers: List[Path] = []
     other_headers: List[Path] = []
     failed_headers: List[Path] = []
+    header_paths = []
+    for p in include_paths:
+        header_paths.extend(p.rglob("*.h"))
 
-    for file_path in sysroot_path.rglob("*.h"):
-        if file_path.name.startswith("."):
+    # these headers have been marked deprecated and moved to alternative locations.
+    # removing these headers in favor of the new implementation.
+    header_paths = filter(
+        lambda p: "hms/native/sysroot/usr/include/hiai_foundation" not in str(p)
+        and "hms/native/sysroot/usr/include/StoreKit/module_install.h"
+        not in str(p),
+        header_paths,
+    )
+
+    for header_path in header_paths:
+        if header_path.name.startswith("."):
             continue
 
         try:
-            with file_path.open("r", encoding="utf-8", errors="ignore") as f:
+            with header_path.open("r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
                 if "@addtogroup" in content:
-                    harmony_sdk_headers.append(file_path)
+                    harmony_sdk_headers.append(header_path)
                 else:
-                    other_headers.append(file_path)
+                    other_headers.append(header_path)
         except Exception as e:
-            print(f"Failed to open file {file_path}: {e}")
-            failed_headers.append(file_path)
+            print(f"Failed to open file {header_path}: {e}")
+            failed_headers.append(header_path)
 
     return harmony_sdk_headers, other_headers, failed_headers
 
@@ -44,7 +66,7 @@ def parse_header_file_info(
     - group: @addtogroup
     - library: @library
     - includes: all #included headers
-    - path: relative path from include_fdr
+    - path: relative path from the include folder
     """
     assert file_path.is_file(), f"{str(file_path)} is not a file"
 
@@ -80,9 +102,12 @@ def parse_header_file_info(
     if library == "NA":
         print(f"Warning: Library for {relative_path} is NA")
     elif library:
-        binary_path = binary_fdr / library
-        if not binary_path.exists():
-            # don't raise assertion here; warn and keep going so we can collect other libs
+        if not any(
+            [
+                (sysroot_fdr / "lib" / "aarch64-linux-ohos" / library).exists()
+                for sysroot_fdr in [ohos_sysroot_fdr, hms_sysroot_fdr]
+            ]
+        ):
             print(f"Warning: Library '{library}' not found for header {relative_path}")
 
     # Parse includes
@@ -126,7 +151,9 @@ def process_all_header_files() -> Dict[str, Dict[str, any]]:
     Main function to process all header files and return the list of parsed information
     """
     # Find all header files
-    harmony_sdk_headers, other_headers, failed_headers = get_all_headers(include_fdr)
+    harmony_sdk_headers, other_headers, failed_headers = get_all_headers(
+        [Path(fdr) / "include" for fdr in [ohos_sysroot_fdr, hms_sysroot_fdr]]
+    )
 
     print(f"{len(harmony_sdk_headers)} header files with @addtogroup tags")
     print(f"{len(other_headers)} header files without @addtogroup tags")
@@ -139,14 +166,23 @@ def process_all_header_files() -> Dict[str, Dict[str, any]]:
     # Parse information from files with @addtogroup
     results: Dict[str, Dict[str, any]] = {}
     for file_path in harmony_sdk_headers:
-        info: Optional[Dict[str, any]] = parse_header_file_info(file_path, include_fdr)
+        info = parse_header_file_info(
+            file_path,
+            (
+                ohos_sysroot_fdr / "include"
+                if str(ohos_sysroot_fdr) in str(file_path)
+                else hms_sysroot_fdr / "include"
+            ),
+        )
         if info:
             results[str(file_path)] = info
 
     return results
 
 
-def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = Path(".")):
+def generate_def_files(
+    header_infos: Dict[str, Dict[str, any]], ohos_platform_lib_fdr: Path = Path(".")
+):
     """
     Generate .def files for Kotlin Native based on grouped header information
     This updated version collects ALL libraries referenced by headers in a group
@@ -169,7 +205,9 @@ def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = 
 
         if filename in header_to_group:
             if header_to_group[filename] != group:
-                print(f"Warning: Filename '{filename}' exists in multiple different groups: {header_to_group[filename]} and {group}")
+                print(
+                    f"Warning: Filename '{filename}' exists in multiple different groups: {header_to_group[filename]} and {group}"
+                )
         else:
             header_to_group[filename] = group
 
@@ -180,9 +218,15 @@ def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = 
         # headers
         if group_name in additional_headers:
             for header_path in additional_headers[group_name][::-1]:
-                headers.insert(0, header_infos.get(header_path, {"path": Path(header_path), "includes": [], "library": None}))
+                headers.insert(
+                    0,
+                    header_infos.get(
+                        header_path,
+                        {"path": Path(header_path), "includes": [], "library": None},
+                    ),
+                )
         header_paths = [str(header["path"]) for header in headers]
-        def_content += f"headers = {' '.join(header_paths)}\n"
+        def_content += f"headers = {' '.join(sorted(header_paths))}\n"
 
         # headerFilter
         folders = set()
@@ -280,7 +324,7 @@ def generate_def_files(header_infos: Dict[str, Dict[str, any]], out_fdr: Path = 
 
         # Write .def file
         def_filename = f"{group_name}.def"
-        def_filepath = out_fdr / def_filename
+        def_filepath = ohos_platform_lib_fdr / def_filename
 
         try:
             with def_filepath.open("w", encoding="utf-8") as f:
@@ -294,13 +338,13 @@ if __name__ == "__main__":
 
     print(f"\nTotal processed files: {len(parsed_results)}")
 
-    input(f"Removing all files in {out_fdr}, Enter to continue or ctrl-c")
+    input(f"Removing all files in {ohos_platform_lib_fdr}, Enter to continue or ctrl-c")
 
     try:
-        subprocess.run(["git", "clean", "-dfx"], cwd=out_fdr, check=True)
-        print(f"Cleaned output directory: {out_fdr}")
+        subprocess.run(["git", "clean", "-dfx"], cwd=ohos_platform_lib_fdr, check=True)
+        print(f"Cleaned output directory: {ohos_platform_lib_fdr}")
     except subprocess.CalledProcessError as e:
-        print(f"Warning: Failed to clean git directory {out_fdr}: {e}")
+        print(f"Warning: Failed to clean git directory {ohos_platform_lib_fdr}: {e}")
     except FileNotFoundError:
         print("Warning: git command not found")
-    generate_def_files(parsed_results, out_fdr)
+    generate_def_files(parsed_results, ohos_platform_lib_fdr)

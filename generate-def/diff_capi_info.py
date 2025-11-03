@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Minimal CSV signature comparison script
+Compare difference between 2 capi versions.
 Reads two CSV files, extracts full_signature column into sets, and shows differences.
 """
 

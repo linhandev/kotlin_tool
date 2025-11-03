@@ -1,24 +1,12 @@
+from local_config import sdk_folder, ohos_platform_lib_fdr
+
 from pathlib import Path
 
-# sysroot_fdr = Path("/Volumes/disk/cache/konan/dependencies/sysroot-ohos-aarch64-6.0.0.858/usr/")
-# # sysroot_fdr = Path("/Users/user/Desktop/software/command-line-tools-6.0.0.858/sdk/default/hms/native/sysroot/usr/")
-# llvm_bin_fdr = Path("/Volumes/disk/cache/konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
-# # llvm_bin_fdr = Path("/Users/user/.konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
-# out_fdr = Path("/Volumes/disk/work/temp/modi_def ")
+# script will be generating def based on headers in sysroots
+ohos_sysroot_fdr = Path(sdk_folder) / "default/openharmony/native/sysroot/usr/"
+hms_sysroot_fdr = Path(sdk_folder) / "default/hms/native/sysroot/usr/"
 
-# sysroot_fdr = Path("/Volumes/disk/cache/konan/dependencies/sysroot-ohos-aarch64-6.0.0.858/usr/")
-sysroot_fdr = Path(
-    "/Users/user/Desktop/software/command-line-tools-6.0.0.858/sdk/default/openharmony/native/sysroot-ohos-aarch64-6.0.0.858/usr/"
-)
-# llvm_bin_fdr = Path("/Volumes/disk/cache/konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
-llvm_bin_fdr = Path("/Users/user/.konan/dependencies/llvm-19-aarch64-macos-dev-75/bin")
-# out_fdr = Path("/Volumes/disk/work/temp/check_def ")
-out_fdr = Path("/Volumes/disk/git/kmp/22/kotlin-native/platformLibs/src/platform/ohos")
-
-include_fdr = sysroot_fdr / "include"
-binary_fdr = sysroot_fdr / "lib" / "aarch64-linux-ohos"
-
-# info that we know for a fact is wrong so we provide our own
+# info that we know for fact is wrong so we provide the corrected one
 library_info = {
     "database/rdb/oh_values_bucket.h": "libnative_rdb_ndk.z.so",
     "database/rdb/relational_store_error_code.h": "libnative_rdb_ndk.z.so",
@@ -44,6 +32,7 @@ library_info = {
     "multimedia/drm_framework/native_mediakeysystem.h": "libnative_drm.so",
     "multimedia/drm_framework/native_drm_common.h": "libnative_drm.so",
 }
+
 group_info = {
     "syscap_ndk.h": "Init",
     "multimedia/image_framework/image/image_source_native.h": "Image_NativeModule",
@@ -77,10 +66,12 @@ group_info = {
     "multimedia/image_framework/image_packer_mdk.h": "Image",
     "native_buffer/buffer_common.h": "BufferCommon",
 }
-# when specifying headerFilter, some stdlib types can be missing
+
+# when headerFilter is specified, some cpp stdlib types can be missing
 additional_headers = {
     "WindowManager": ["cstddef"],
     "netstack": ["cstddef", "cstdint"],
-    "ArkUI_NativeModule": ["arkui/ui_input_event.h"], # solve circular dependency
+    "ArkUI_NativeModule": ["arkui/ui_input_event.h"], # resolve circular dependency
 }
 additional_compilerOpts = {}
+ohos_platform_lib_fdr = Path(ohos_platform_lib_fdr)
