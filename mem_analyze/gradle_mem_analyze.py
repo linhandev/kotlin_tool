@@ -5,6 +5,7 @@ Uses footprint to measure physical footprint; outputs interactive HTML plots.
 """
 
 import argparse
+import csv
 import re
 import subprocess
 import sys
@@ -272,14 +273,30 @@ def main() -> None:
         )
         fig1.write_html(run_dir / "phys_mem_per_process.html")
 
-        # Tree: total memory over time + system free decreased (compare tree vs system)
+        # Per-process CSV
+        pids_sorted = sorted(peak_by_pid.keys(), key=lambda p: pid_first_seen.get(p, 0))
+        cols = ["time_sec"] + [f"{all_pids_seen.get(p, f'pid:{p}')}_{p}" for p in pids_sorted]
+        with open(run_dir / "phys_mem_per_process.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(cols)
+            for i, s in enumerate(samples):
+                row = [round(times[i], 2)]
+                for pid in pids_sorted:
+                    data = s["by_pid"].get(pid)
+                    val = ""
+                    if data:
+                        v = data.get("phys_footprint") or data.get("phys_footprint_peak")
+                        if v is not None:
+                            val = round(v / (1024 * 1024), 2)
+                    row.append(val)
+                w.writerow(row)
+
+        # Tree: total memory over time + physical memory free
         tree_total = [
             (s["tree"].get("summary_footprint") or 0) / (1024 * 1024)
             for s in samples
         ]
         vm_free_mb = [(s.get("vm_free_bytes") or 0) / (1024 * 1024) for s in samples]
-        initial_free = vm_free_mb[0] if vm_free_mb else 0
-        free_decreased = [initial_free - f for f in vm_free_mb]
         fig2 = go.Figure()
         fig2.add_trace(
             go.Scatter(x=times, y=tree_total, mode="lines+markers", name="Tree total (MB)")
@@ -287,26 +304,37 @@ def main() -> None:
         fig2.add_trace(
             go.Scatter(
                 x=times,
-                y=free_decreased,
+                y=vm_free_mb,
                 mode="lines+markers",
-                name="System free decreased (MB)",
+                name="Physical memory free (MB)",
                 yaxis="y2",
             )
         )
         fig2.update_layout(
-            title="Tree total vs system free decreased over time",
+            title="Tree total vs physical memory free over time",
             xaxis_title="Seconds since start",
             yaxis_title="Tree total (MB)",
             yaxis2=dict(
-                title="System free decreased (MB)",
+                title="Physical memory free (MB)",
                 overlaying="y",
                 side="right",
             ),
         )
         fig2.write_html(run_dir / "total_tree_over_time.html")
 
+        # Tree CSV
+        with open(run_dir / "total_tree_over_time.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["time_sec", "tree_total_mb", "physical_memory_free_mb"])
+            for i in range(len(times)):
+                w.writerow([
+                    round(times[i], 2),
+                    round(tree_total[i], 2),
+                    round(vm_free_mb[i], 2),
+                ])
+
         print(f"\nOutput: {run_dir.absolute()}/")
-        print(f"  phys_mem_per_process.html, total_tree_over_time.html, footprint/, gradle_output.log")
+        print(f"  phys_mem_per_process.html, total_tree_over_time.html, *.csv, footprint/, gradle_output.log")
 
 
 if __name__ == "__main__":
