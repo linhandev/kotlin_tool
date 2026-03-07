@@ -1,0 +1,20 @@
+# Output
+mem_analyze_output/
+*.png
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
