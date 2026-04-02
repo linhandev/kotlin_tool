@@ -1,0 +1,25 @@
+---
+description: Agent guide for comparing klib import/API surface across Kotlin Native versions (klib/ tools).
+globs: klib/**
+alwaysApply: true
+---
+
+# Klib cross-version import analysis
+
+Iterate this guide if you pick up meaningful new principle/goals
+
+## Goal
+
+Compare **`.klib`** artifacts between Kotlin / Kotlin Native versions and see whether **developer-visible surface** (what you can import or bind to) meaningfully changed. Prefer correctness of conclusions over speed or polish.
+
+## Principles
+
+1. **Simple pipeline** — dump → normalize → diff; document assumptions in code next to the parser, not only in chat.
+2. **Respect edge cases** — bad filtering hides real churn or invents fake diffs; when you exclude something, say what and why. If unsure, bias toward **including** rather than dropping symbols.
+3. **Evidence before locking rules** — skim real dumps from **both** versions and sanity-check guesses before treating a heuristic as final.
+4. **Test** — unit tests on representative lines plus occasional runs on extra real klibs; re-check after rule changes.
+
+## Notes
+
+- Default `klib` entry point for automation is usually **`dump-metadata-signatures`**; not every subcommand works on every klib (e.g. IR-less libraries).
+- Implementation and normalization details live in **`klib/`** source and docstrings; keep this file to **principles only**.

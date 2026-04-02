@@ -1,8 +1,8 @@
 package demo
 
 import platform.ohos.custom.custom_magic
-import platform.ohos.napi_ref
-import platform.ohos.napi_value
+import platform.ArkTS.ArkTS_Napi_NativeModule.napi_ref
+import platform.ArkTS.ArkTS_Napi_NativeModule.napi_value
 
 @Suppress("UNUSED_PARAMETER")
 fun mixedImportSample(ref: napi_ref?, valueFromWildcard: napi_value?) {

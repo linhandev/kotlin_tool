@@ -1,6 +1,6 @@
 package demo
 
-import platform.ohos.ioctl
+import platform.posix.ioctl
 
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 fun ioctlSample() {

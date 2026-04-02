@@ -1,6 +1,6 @@
 package demo
 
-import platform.devices.DDK_SUCCESS
+import platform.DriverDevelopmentKit.BaseDdk.DDK_SUCCESS
 
 fun ddkSuccessSample() {
     val ret = DDK_SUCCESS

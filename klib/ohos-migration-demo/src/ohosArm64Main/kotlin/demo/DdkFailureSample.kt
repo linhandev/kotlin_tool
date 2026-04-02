@@ -1,6 +1,6 @@
 package demo
 
-import platform.devices.DDK_FAILURE
+import platform.DriverDevelopmentKit.BaseDdk.DDK_FAILURE
 
 fun ddkFailureSample() {
     val ret = DDK_FAILURE

@@ -62,7 +62,7 @@ The demo also includes a cinterop `.def` that generates `platform.ohos.custom` f
 
 10. Post-migration completion check (`scan`)
    - **Context:** After import rewrites, `scan` should report migration completion from mapping scope.
-   - **Fixture flow:** `demo/ohos-migration-demo/test.sh` runs `scan` and checks summary fields.
+   - **Fixture flow:** `klib/test.sh` (repo root: `./klib/test.sh`) runs the migration demo pipeline (see that script).
    - **Expectation:** `totalCurrentVersionImports=0`, `wildcardImportsInOhSourceset=0`, and `isMigrationComplete=yes` before the to-version rebuild step.
 
 11. Mapping-file-only workflow (`scan` / `migrate`)
