@@ -1,0 +1,7 @@
+# Toggle only this line, then rebuild to compare klib signatures (e.g. OpaqueHandle):
+#   language = C
+#   language = C++
+language = C++
+headers = custom_api.h
+headerFilter = custom_api.h
+package = platform.ohos.custom

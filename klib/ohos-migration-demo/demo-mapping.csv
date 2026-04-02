@@ -1,0 +1,4 @@
+source_package,declaration,status,target_package
+platform.ohos,LOG_DEBUG,mapped,platform.PerformanceAnalysisKit.HiLog
+platform.ohos,MY_MISSING,missing,
+platform.devices,DDK_AMBIG,ambiguous,platform.PkgA|platform.PkgB

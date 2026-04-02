@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+build/
+
+# Kotlin
+.kotlin/
+
+# Local machine / SDK paths (not portable)
+local.properties
+
+# IDE — regenerate from Gradle / IDE
+.idea/
+*.iml
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
