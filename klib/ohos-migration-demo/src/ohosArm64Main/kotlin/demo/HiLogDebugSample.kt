@@ -1,6 +1,6 @@
 package demo
 
-import platform.PerformanceAnalysisKit.HiLog.LOG_DEBUG
+import platform.ohos.LOG_DEBUG
 
 fun hiLogDebugSample() {
     val level = LOG_DEBUG

@@ -1,18 +1,18 @@
 package demo
 
-import platform.info.OH_API_VERSION_10
-import platform.info.OH_API_VERSION_11
-import platform.info.OH_API_VERSION_12
-import platform.info.OH_API_VERSION_13
-import platform.info.OH_API_VERSION_14
-import platform.info.OH_API_VERSION_15
-import platform.info.OH_CURRENT_API_VERSION
-import platform.info.SDK_VERSION_7
-import platform.info.SDK_VERSION_8
-import platform.info.SDK_VERSION_9
-import platform.info.SDK_VERSION_FUTURE
-import platform.info.get_application_target_sdk_version
-import platform.info.set_application_target_sdk_version
+import platform.ohos.OH_API_VERSION_10
+import platform.ohos.OH_API_VERSION_11
+import platform.ohos.OH_API_VERSION_12
+import platform.ohos.OH_API_VERSION_13
+import platform.ohos.OH_API_VERSION_14
+import platform.ohos.OH_API_VERSION_15
+import platform.ohos.OH_CURRENT_API_VERSION
+import platform.ohos.SDK_VERSION_7
+import platform.ohos.SDK_VERSION_8
+import platform.ohos.SDK_VERSION_9
+import platform.ohos.SDK_VERSION_FUTURE
+import platform.ohos.get_application_target_sdk_version
+import platform.ohos.set_application_target_sdk_version
 
 fun sdkInfoSample() {
     val sum =

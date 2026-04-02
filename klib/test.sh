@@ -5,6 +5,10 @@
 # Source/target compiler versions match klib/config.py (SOURCE_COMPILER_VERSION /
 # TARGET_COMPILER_VERSION) and the mapping CSV under klib/mappings/.
 #
+# Step 0 runs ``git restore`` on ``klib/ohos-migration-demo/src``. The committed tree must use
+# **pre-migration** platform imports (e.g. ``platform.ohos.*``, ``platform.framework.*``) so the
+# source-compiler Gradle step compiles. If you committed post-migration imports, step 1 fails.
+#
 # Run from repository root: ./klib/test.sh
 # Or from this directory: ./test.sh
 set -euo pipefail

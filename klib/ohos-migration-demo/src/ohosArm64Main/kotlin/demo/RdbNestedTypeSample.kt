@@ -5,9 +5,9 @@ import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
-import platform.ArkData.RDB.OH_Rdb_GetSupportedDbType
+import platform.framework.OH_Rdb_GetSupportedDbType
 import platform.framework.Rdb_KeyData
-import platform.ArkData.RDB.Rdb_KeyInfo
+import platform.framework.Rdb_KeyInfo
 
 /**
  * KBA: `Rdb_KeyData` is top-level in `platform.framework`. [Rdb_KeyInfo.data] and

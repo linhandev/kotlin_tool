@@ -5,6 +5,7 @@ fun main() {
     wildcardImportSample(null, null)
     mixedImportSample(null, null)
     rdbNestedTypeSample(null)
+    rdbNestedMultiImportSample(null)
     hiLogDebugSample()
     ddkFailureSample()
     ddkSuccessSample()
