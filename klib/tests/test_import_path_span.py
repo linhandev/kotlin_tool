@@ -1,10 +1,8 @@
 """
-Exercises ``import_path_fqname_and_span`` for IDEA-style, compiling-import lines.
+Exercises ``import_path_fqname_and_span`` (see ``migrate`` module docstring for scope).
 
-**Not covered** (would need Kotlin PSI or a full lexer): multiline ``import``,
-backtick / quoted names, comments *inside* the dotted path, BOM-prefixed lines,
-``import`` followed only by ``\\v``/``\\f`` (we only accept space/tab after
-``import``), string literals on the import line, K2-only edge cases.
+Out of scope for the mapper: paths containing **backticks** (returns ``None``),
+BOM, ``\\v`` after ``import``, multiline imports — use an LLM or editor for those.
 """
 from __future__ import annotations
 
@@ -54,15 +52,18 @@ class ImportPathFqnameAndSpanTest(unittest.TestCase):
         ):
             self._assert_span(line, expect=None)
 
-    def test_none_wildcard_or_invalid_path(self) -> None:
+    def test_none_wildcard_only(self) -> None:
         for line in (
             "import foo.*\n",
             "import foo.* // wild\n",
-            "import foo..bar\n",
-            "import .foo\n",
-            "import foo.\n",
         ):
             self._assert_span(line, expect=None)
+
+    def test_malformed_dot_paths_still_parsed(self) -> None:
+        """No validation of segment shape; mapping lookup usually misses (LLM can fix)."""
+        self._assert_span("import foo..bar\n", expect=("foo..bar", "foo..bar"))
+        self._assert_span("import .foo\n", expect=(".foo", ".foo"))
+        self._assert_span("import foo.\n", expect=("foo.", "foo."))
 
     def test_simple_and_indent(self) -> None:
         self._assert_span(
@@ -210,14 +211,13 @@ class ImportPathFqnameAndSpanTest(unittest.TestCase):
         )
 
     def test_unicode_identifier_segments(self) -> None:
-        """Python ``isalnum`` on Unicode letters matches our segment check."""
         self._assert_span(
             "import naïve.Example\n",
             expect=("naïve.Example", "naïve.Example"),
         )
 
     def test_none_backtick_qualified_name(self) -> None:
-        """Backtick segments are valid Kotlin but not ``_dotted_import_path``."""
+        """Backtick paths skipped (whitespace collapse would corrupt the name)."""
         self._assert_span(
             "import `foo bar`.Baz\n",
             expect=None,

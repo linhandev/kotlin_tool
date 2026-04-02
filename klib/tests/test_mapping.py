@@ -2,10 +2,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from klib.mapping import get_compiler_version
+from klib.mapping import get_compiler_version, simple_tail
 
 
 class MappingTest(unittest.TestCase):
+    def test_simple_tail(self) -> None:
+        self.assertEqual(simple_tail("Rdb_KeyData"), "Rdb_KeyData")
+        self.assertEqual(simple_tail("Rdb_KeyInfo::Rdb_KeyData"), "Rdb_KeyData")
+        self.assertEqual(simple_tail("Foo.Bar.Nested"), "Foo.Bar.Nested")
+        self.assertEqual(simple_tail("Rdb_KeyInfo.data"), "Rdb_KeyInfo.data")
+
     def test_get_compiler_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

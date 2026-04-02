@@ -8,6 +8,8 @@
 # Step 0 runs ``git restore`` on ``klib/ohos-migration-demo/src``. The committed tree must use
 # **pre-migration** platform imports (e.g. ``platform.ohos.*``, ``platform.framework.*``) so the
 # source-compiler Gradle step compiles. If you committed post-migration imports, step 1 fails.
+# Migrated lines with backtick-qualified import paths are intentionally not parsed again (narrow
+# ``migrate`` scope); re-run from restored sources or normalize those lines by hand.
 #
 # Run from repository root: ./klib/test.sh
 # Or from this directory: ./test.sh

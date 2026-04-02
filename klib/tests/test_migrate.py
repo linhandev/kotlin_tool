@@ -11,8 +11,8 @@ class MigrateTest(unittest.TestCase):
             root = Path(tmp)
             mapping = root / "m.csv"
             mapping.write_text(
-                "source_package,declaration,status,target_package\n"
-                "platform.ohos,FOO,mapped,platform.target\n",
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,FOO,mapped,platform.target,\n",
                 encoding="utf-8",
             )
             (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
@@ -33,8 +33,8 @@ class MigrateTest(unittest.TestCase):
             root = Path(tmp)
             mapping = root / "m.csv"
             mapping.write_text(
-                "source_package,declaration,status,target_package\n"
-                "platform.ohos,FOO,mapped,platform.target\n",
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,FOO,mapped,platform.target,\n",
                 encoding="utf-8",
             )
             (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
@@ -61,8 +61,8 @@ class MigrateTest(unittest.TestCase):
             root = Path(tmp)
             mapping = root / "m.csv"
             mapping.write_text(
-                "source_package,declaration,status,target_package\n"
-                "platform.ohos,FOO,mapped,platform.target\n",
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,FOO,mapped,platform.target,\n",
                 encoding="utf-8",
             )
             (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
@@ -79,8 +79,8 @@ class MigrateTest(unittest.TestCase):
             root = Path(tmp)
             mapping = root / "m.csv"
             mapping.write_text(
-                "source_package,declaration,status,target_package\n"
-                "platform.ohos,FOO,mapped,platform.target\n",
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,FOO,mapped,platform.target,\n",
                 encoding="utf-8",
             )
             (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
@@ -95,9 +95,9 @@ class MigrateTest(unittest.TestCase):
             root = Path(tmp)
             mapping = root / "m.csv"
             mapping.write_text(
-                "source_package,declaration,status,target_package\n"
-                "platform.ohos,GONE,missing,\n"
-                "platform.devices,X,ambiguous,a|b\n",
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,GONE,missing,,\n"
+                "platform.devices,X,ambiguous,a|b,\n",
                 encoding="utf-8",
             )
             (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
@@ -118,14 +118,55 @@ class MigrateTest(unittest.TestCase):
             root = Path(tmp)
             mapping = root / "m.csv"
             mapping.write_text(
-                "source_package,declaration,status,target_package\n"
-                "platform.ohos,FOO,mapped,platform.a\n"
-                "platform.ohos,FOO,mapped,platform.b\n",
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,FOO,mapped,platform.a,\n"
+                "platform.ohos,FOO,mapped,platform.b,\n",
                 encoding="utf-8",
             )
             with self.assertRaises(AssertionError) as ctx:
                 migrate.load_mapping_csv(mapping)
             self.assertIn("duplicate source fqname", str(ctx.exception))
+
+    def test_nested_target_declaration_import_and_typealias(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mapping = root / "m.csv"
+            mapping.write_text(
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.framework,Rdb_KeyData,mapped,platform.ArkData.RDB,"
+                "Rdb_KeyInfo::Rdb_KeyData\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
+            kt = root / "src" / "ohosMain" / "kotlin" / "T.kt"
+            kt.write_text(
+                "import platform.framework.Rdb_KeyData\n\nfun f(x: Rdb_KeyData?) {}\n",
+                encoding="utf-8",
+            )
+            stats = migrate.migrate_project(root, mapping, write=True)
+            self.assertEqual(stats.typealias_lines_added, 1)
+            text = kt.read_text(encoding="utf-8")
+            self.assertIn(
+                "import platform.ArkData.RDB.`Rdb_KeyInfo::Rdb_KeyData`",
+                text,
+            )
+            self.assertIn("typealias Rdb_KeyData = `Rdb_KeyInfo::Rdb_KeyData`", text)
+
+    def test_mapping_csv_without_target_declaration_column(self) -> None:
+        """Older CSVs without the column behave like empty ``target_declaration``."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mapping = root / "m.csv"
+            mapping.write_text(
+                "source_package,declaration,status,target_package\n"
+                "platform.ohos,FOO,mapped,platform.target\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "ohosMain" / "kotlin").mkdir(parents=True)
+            kt = root / "src" / "ohosMain" / "kotlin" / "T.kt"
+            kt.write_text("import platform.ohos.FOO\n", encoding="utf-8")
+            migrate.migrate_project(root, mapping, write=True)
+            self.assertEqual(kt.read_text(encoding="utf-8"), "import platform.target.FOO\n")
 
 
 if __name__ == "__main__":

@@ -4,9 +4,20 @@ Migrate Kotlin ``import`` lines from source-version platform FQ names to target-
 FQ names using a mapping CSV (see ``mapping.py``). Only OH source-set ``.kt`` files
 (``source_paths.collect`` + ``config``).
 
-Imports are assumed **compiling Kotlin** and **IDEA “Optimize Imports”**-style layout:
-one statement per line, no comments inside the dotted path, optional ``//`` / ``/*``
-only after the path (or after ``as``).
+**Import parsing scope (intentionally minimal)**
+
+This tool is meant to be driven by an LLM or human on normal code; **exotic** syntax
+is out of scope here.
+
+- **Handled:** one line per ``import``; path is the substring after ``import`` (plus
+  space/tab) **up to the first** of ``//``, ``/*``, or `` as `` (whichever is
+  earliest); trailing ``;`` on the path side is stripped; internal whitespace in
+  that region is collapsed for the mapping lookup key; replacement uses the
+  non-whitespace span in the source line.
+- **Skipped / not handled:** import paths containing **backticks** (skipped so we
+  do not corrupt names); comments inside the path that confuse the cut points;
+  multiline imports; BOM; non-space/tab after ``import`` — use an editor or
+  **LLM** to normalize those lines before/after migration.
 """
 from __future__ import annotations
 
@@ -26,6 +37,13 @@ from config import (
 )
 
 
+def _simple_tail(declaration: str) -> str:
+    """Tail key aligned with :func:`mapping.simple_tail` (``::`` only; dotted paths stay whole)."""
+    if "::" in declaration:
+        return declaration.split("::")[-1]
+    return declaration
+
+
 def resolve_mapping_csv(
     source_compiler_version: str, target_compiler_version: str,
 ) -> Path | None:
@@ -40,15 +58,6 @@ def resolve_mapping_csv(
             return p
     return None
 
-def _dotted_import_path(s: str) -> bool:
-    """Non-empty dot-separated segments of letters, digits, or underscores."""
-    if not s:
-        return False
-    return all(
-        seg and all(c.isalnum() or c == "_" for c in seg) for seg in s.split(".")
-    )
-
-
 def _strip_trailing_semicolons(s: str) -> str:
     s = s.rstrip()
     while s.endswith(";"):
@@ -56,13 +65,12 @@ def _strip_trailing_semicolons(s: str) -> str:
     return s
 
 
-def _import_tail_before_comments(tail: str) -> str:
-    """Drop ``//`` line comment and ``/*`` block start (IDEA-style: path before these)."""
+def _import_path_region(tail: str) -> str:
+    """Substring after ``import`` + whitespace, up to the first ``//``, ``/*``, or `` as ``."""
     cut = len(tail)
-    if "//" in tail:
-        cut = min(cut, tail.index("//"))
-    if "/*" in tail:
-        cut = min(cut, tail.index("/*"))
+    for marker in ("//", "/*", " as "):
+        if marker in tail:
+            cut = min(cut, tail.index(marker))
     return tail[:cut]
 
 
@@ -83,10 +91,9 @@ def _import_path_start_index(line: str, li: int) -> int | None:
 
 def import_path_fqname_and_span(line: str) -> tuple[str, int, int] | None:
     """
-    For a single physical line, return ``(fqname, start, end)`` where ``line[start:end]``
-    is the import path text to replace, and ``fqname`` is that span with whitespace
-    collapsed (mapping lookup key). Wildcard ``path.*`` is not returned (handled
-    elsewhere). Returns ``None`` if not a simple FQ import line.
+    Return ``(fqname, start, end)`` for the **basic** path slice (see module docstring).
+    **Wildcard** ``.*`` paths return ``None`` (handled elsewhere). Empty path
+    returns ``None``.
     """
     li = len(line) - len(line.lstrip())
     p0 = _import_path_start_index(line, li)
@@ -94,23 +101,18 @@ def import_path_fqname_and_span(line: str) -> tuple[str, int, int] | None:
         return None
     tail = line[p0:]
     tail = tail.split("\n", 1)[0].rstrip("\r")
-    code = _import_tail_before_comments(tail)
-    if " as " in code:
-        left, _, _ = code.partition(" as ")
-    else:
-        left = code
-    left = _strip_trailing_semicolons(left)
-    if not left.strip():
+    region = _import_path_region(tail)
+    region = _strip_trailing_semicolons(region)
+    if not region.strip():
         return None
-    i0 = len(left) - len(left.lstrip())
-    path_text = left.lstrip()
-    path_text = _strip_trailing_semicolons(path_text)
-    if not path_text or path_text.endswith(".*"):
+    i0 = len(region) - len(region.lstrip())
+    i1 = len(region.rstrip())
+    slice_text = region[i0:i1]
+    if "`" in slice_text:
         return None
-    if not _dotted_import_path(path_text):
+    fqname = "".join(slice_text.split())
+    if not fqname or fqname.endswith(".*"):
         return None
-    fqname = "".join(path_text.split())
-    i1 = i0 + len(path_text)
     start = p0 + i0
     end = p0 + i1
     return fqname, start, end
@@ -129,8 +131,9 @@ def is_mapping_scoped_wildcard_import(line: str, source_pkgs: frozenset[str]) ->
     tail = tail.split("\n", 1)[0].rstrip("\r")
     if " as " in tail:
         return False
-    code = _import_tail_before_comments(tail)
-    compact = "".join(code.split())
+    region = _import_path_region(tail)
+    region = _strip_trailing_semicolons(region)
+    compact = "".join(region.split())
     if not compact.endswith(".*"):
         return False
     prefix = compact[:-2]
@@ -141,18 +144,22 @@ def is_mapping_scoped_wildcard_import(line: str, source_pkgs: frozenset[str]) ->
 class MigrationStats:
     lines_changed: int = 0
     fq_replaced: int = 0
+    typealias_lines_added: int = 0
     wildcard_hits: list[tuple[str, str]] = field(default_factory=list)  # (file://url, reason)
     fq_not_changed: list[tuple[str, str]] = field(default_factory=list)  # (file://url, reason)
 
 
-def load_mapping_csv(path: Path) -> tuple[dict[str, tuple[str, str, str]], frozenset[str]]:
+def load_mapping_csv(path: Path) -> tuple[dict[str, tuple[str, str, str, str]], frozenset[str]]:
     """
     Return ``(mappings, source_packages)`` where
-    ``mappings[source_fqname] = (status, target_package, declaration)``.
+    ``mappings[source_fqname] = (status, target_package, source_declaration, target_declaration)``.
+    ``target_declaration`` is empty when the import path is ``target_package`` + ``.`` + ``declaration``;
+    when set (nested ``::`` name on target), the import line uses a backtick-quoted nested name
+    after ``target_package.`` and a ``typealias`` is inserted after the last import.
     ``source_fqname`` is ``source_package`` + ``.`` + ``declaration``.
     Duplicate ``source_fqname`` rows are rejected (assert).
     """
-    mappings: dict[str, tuple[str, str, str]] = {}
+    mappings: dict[str, tuple[str, str, str, str]] = {}
     packages: set[str] = set()
     with path.open(encoding="utf-8", newline="") as f:
         r = csv.DictReader(f)
@@ -161,26 +168,27 @@ def load_mapping_csv(path: Path) -> tuple[dict[str, tuple[str, str, str]], froze
             decl = row["declaration"].strip()
             st = row["status"].strip()
             tp = row["target_package"].strip()
+            td = (row.get("target_declaration") or "").strip()
             fqname = f"{sp}.{decl}"
             assert fqname not in mappings, f"duplicate source fqname in mapping CSV: {fqname!r}"
-            mappings[fqname] = (st, tp, decl)
+            mappings[fqname] = (st, tp, decl, td)
             packages.add(sp)
     return mappings, frozenset(packages)
 
 
 def lookup_mapped_import(
     import_path: str,
-    mappings: dict[str, tuple[str, str, str]],
-) -> tuple[str, str, str] | None:
+    mappings: dict[str, tuple[str, str, str, str]],
+) -> tuple[str, str, str, str] | None:
     """
     If ``import_path`` equals a source fqname key in ``mappings``, return
-    ``(declaration, status, target_package)``; else None.
+    ``(declaration, status, target_package, target_declaration)``; else None.
     """
     row = mappings.get(import_path)
     if row is None:
         return None
-    st, target_pkg, decl = row
-    return (decl, st, target_pkg)
+    st, target_pkg, decl, tgt_decl = row
+    return (decl, st, target_pkg, tgt_decl)
 
 
 def file_ref(path: Path, lineno: int) -> str:
@@ -191,12 +199,15 @@ def process_line(
     line: str,
     lineno: int,
     path: Path,
-    mappings: dict[str, tuple[str, str, str]],
+    mappings: dict[str, tuple[str, str, str, str]],
     source_pkgs: frozenset[str],
     stats: MigrationStats,
+    typealias_keys: set[tuple[str, str]] | None = None,
 ) -> str | None:
     """
     Return replacement line (with newline) if the line should change; ``None`` if unchanged.
+    When ``typealias_keys`` is set and the row uses ``target_declaration``, records
+    ``(simple_tail(source declaration), target_declaration)`` for insertion after the last import.
     """
     if is_mapping_scoped_wildcard_import(line, source_pkgs):
         stats.wildcard_hits.append(
@@ -213,11 +224,16 @@ def process_line(
     if hit is None:
         return None
 
-    decl, status, target_pkg = hit
+    decl, status, target_pkg, target_decl = hit
     if status == "mapped":
-        new_path = f"{target_pkg}.{decl}"
+        if target_decl:
+            new_path = f"{target_pkg}.`{target_decl}`"
+        else:
+            new_path = f"{target_pkg}.{decl}"
         new_line = line[:start] + new_path + line[end:]
         if new_line != line:
+            if target_decl and typealias_keys is not None:
+                typealias_keys.add((_simple_tail(decl), target_decl))
             stats.fq_replaced += 1
             return new_line
         return None
@@ -239,6 +255,24 @@ def process_line(
     return None
 
 
+def _last_import_line_index(lines: list[str]) -> int | None:
+    """Index of the last line that starts an ``import`` statement, or ``None``."""
+    last: int | None = None
+    for i, line in enumerate(lines):
+        li = len(line) - len(line.lstrip())
+        if _import_path_start_index(line, li) is not None:
+            last = i
+    return last
+
+
+def _typealias_lines(keys: set[tuple[str, str]]) -> list[str]:
+    """Sorted ``typealias`` lines for stable output."""
+    out: list[str] = []
+    for alias, rhs in sorted(keys, key=lambda t: (t[0], t[1])):
+        out.append(f"typealias {alias} = `{rhs}`\n")
+    return out
+
+
 def migrate_project(
     project: Path,
     mapping_csv: Path,
@@ -249,11 +283,15 @@ def migrate_project(
 
     kt_files = source_paths.collect(project, SOURCE_SET_NAMES)
     stats = MigrationStats()
+    # Same ``(alias, rhs)`` must not be emitted in multiple ``package`` compilation units; skip
+    # duplicates after the first file (same pattern as duplicate imports across demo samples).
+    typealias_seen_project: set[tuple[str, str]] = set()
 
     for kt in kt_files:
         text = kt.read_text(encoding="utf-8", errors="replace")
         lines = text.splitlines(keepends=True)
         out: list[str] = []
+        typealias_keys: set[tuple[str, str]] = set()
         for lineno, line in enumerate(lines, start=1):
             # Kotlin ``import`` is lowercase; skip non-import lines (``import`` + ws + path).
             li = len(line) - len(line.lstrip())
@@ -267,12 +305,24 @@ def migrate_project(
                 mappings,
                 source_pkgs,
                 stats,
+                typealias_keys=typealias_keys,
             )
             if new_line is not None:
                 out.append(new_line)
                 stats.lines_changed += 1
             else:
                 out.append(line)
+
+        if typealias_keys:
+            to_add = typealias_keys - typealias_seen_project
+            typealias_seen_project |= typealias_keys
+            if to_add:
+                alias_lines = _typealias_lines(to_add)
+                li = _last_import_line_index(out)
+                if li is not None:
+                    out = out[: li + 1] + alias_lines + out[li + 1 :]
+                    stats.typealias_lines_added += len(alias_lines)
+                    stats.lines_changed += len(alias_lines)
 
         if write and "".join(out) != text:
             kt.write_text("".join(out), encoding="utf-8")
@@ -284,6 +334,7 @@ def report(stats: MigrationStats) -> None:
     print("--- Migration report ---", file=sys.stderr)
     print(f"Lines changed: {stats.lines_changed}", file=sys.stderr)
     print(f"FQ imports rewritten: {stats.fq_replaced}", file=sys.stderr)
+    print(f"Typealias lines added: {stats.typealias_lines_added}", file=sys.stderr)
     print(f"Wildcard imports (warnings): {len(stats.wildcard_hits)}", file=sys.stderr)
     for url, reason in stats.wildcard_hits:
         print(f"  {url} — {reason}", file=sys.stderr)
