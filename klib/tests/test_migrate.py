@@ -22,6 +22,9 @@ class MigrateTest(unittest.TestCase):
             stats = migrate.migrate_project(root, mapping, write=False)
             self.assertEqual(stats.fq_replaced, 1)
             self.assertEqual(stats.lines_changed, 1)
+            self.assertEqual(len(stats.changed_line_refs), 1)
+            self.assertTrue(stats.changed_line_refs[0].startswith("file://"))
+            self.assertTrue(stats.changed_line_refs[0].endswith(":1"))
             self.assertEqual(stats.wildcard_hits, [])
             self.assertEqual(stats.fq_not_changed, [])
 
@@ -145,12 +148,36 @@ class MigrateTest(unittest.TestCase):
             )
             stats = migrate.migrate_project(root, mapping, write=True)
             self.assertEqual(stats.typealias_lines_added, 1)
+            self.assertEqual(len(stats.changed_line_refs), 2)
+            self.assertTrue(all(r.startswith("file://") for r in stats.changed_line_refs))
             text = kt.read_text(encoding="utf-8")
             self.assertIn(
                 "import platform.ArkData.RDB.`Rdb_KeyInfo::Rdb_KeyData`",
                 text,
             )
             self.assertIn("typealias Rdb_KeyData = `Rdb_KeyInfo::Rdb_KeyData`", text)
+
+    def test_filter_source_sets_false_migrates_any_path(self) -> None:
+        """Without source-set path filter, ``commonMain`` (etc.) ``.kt`` files are included."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mapping = root / "m.csv"
+            mapping.write_text(
+                "source_package,declaration,status,target_package,target_declaration\n"
+                "platform.ohos,FOO,mapped,platform.target,\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "commonMain" / "kotlin").mkdir(parents=True)
+            kt = root / "src" / "commonMain" / "kotlin" / "T.kt"
+            kt.write_text("import platform.ohos.FOO\n", encoding="utf-8")
+
+            stats_default = migrate.migrate_project(root, mapping, write=False)
+            self.assertEqual(stats_default.lines_changed, 0)
+
+            stats_all = migrate.migrate_project(
+                root, mapping, write=False, filter_source_sets=False
+            )
+            self.assertEqual(stats_all.lines_changed, 1)
 
     def test_mapping_csv_without_target_declaration_column(self) -> None:
         """Older CSVs without the column behave like empty ``target_declaration``."""

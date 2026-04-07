@@ -2,7 +2,7 @@
 """
 Migrate Kotlin ``import`` lines from source-version platform FQ names to target-version
 FQ names using a mapping CSV (see ``mapping.py``). Only OH source-set ``.kt`` files
-(``source_paths.collect`` + ``config``).
+(``collect()`` + ``config``, or all ``.kt`` files with ``--all-kt``).
 
 **Import parsing scope (intentionally minimal)**
 
@@ -23,11 +23,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-
-import source_paths
+from typing import Iterable
 
 from config import (
     MIGRATING_PROJECT,
@@ -35,6 +35,83 @@ from config import (
     SOURCE_SET_NAMES,
     TARGET_COMPILER_VERSION,
 )
+
+
+def collect(
+    root: Path | str,
+    source_set_names: Iterable[str],
+    *,
+    filter_source_sets: bool = True,
+) -> list[Path]:
+    """
+    Sorted unique ``.kt`` files under ``root``.
+
+    When ``filter_source_sets`` is True (default), only paths that contain
+    ``/<name>/`` for some non-empty ``name`` in ``source_set_names`` are kept; if
+    that set is empty after stripping, returns no files.
+
+    When ``filter_source_sets`` is False, every ``.kt`` file under ``root`` (Git-
+    listed or rglob) is included; ``source_set_names`` is ignored for filtering.
+
+    Git work trees: uses ``git ls-files`` (ignore-aware). Otherwise ``rglob("*.kt")``.
+    """
+    root_p = Path(root)
+    if not root_p.is_dir():
+        raise NotADirectoryError(f"not a directory: {root_p}")
+
+    names = frozenset(n.strip() for n in source_set_names if n and n.strip())
+    if filter_source_sets and not names:
+        return []
+
+    def norm_path(path: Path) -> str:
+        try:
+            rel = path.resolve().relative_to(root_p.resolve())
+        except ValueError:
+            rel = path.resolve()
+        return rel.as_posix()
+
+    def inside_git_work_tree() -> bool:
+        r = subprocess.run(
+            ["git", "-C", str(root_p), "rev-parse", "--is-inside-work-tree"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return r.returncode == 0 and r.stdout.strip() == "true"
+
+    def git_ls_files() -> list[Path]:
+        proc = subprocess.run(
+            ["git", "-C", str(root_p), "ls-files", "-z", "-c", "-o", "--exclude-standard"],
+            capture_output=True,
+            check=True,
+        )
+        if not proc.stdout:
+            return []
+        out: list[Path] = []
+        for rel in proc.stdout.split(b"\0"):
+            if rel:
+                out.append(root_p / rel.decode("utf-8", errors="surrogateescape"))
+        return out
+
+    if inside_git_work_tree():
+        candidates = git_ls_files()
+    else:
+        candidates = [p for p in root_p.rglob("*.kt") if p.is_file()]
+
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for p in candidates:
+        if not p.is_file() or p.suffix != ".kt":
+            continue
+        if filter_source_sets and not any(f"/{n}/" in norm_path(p) for n in names):
+            continue
+        rp = p.resolve()
+        if rp in seen:
+            continue
+        seen.add(rp)
+        result.append(p)
+
+    return sorted(result, key=norm_path)
 
 
 def _simple_tail(declaration: str) -> str:
@@ -145,6 +222,7 @@ class MigrationStats:
     lines_changed: int = 0
     fq_replaced: int = 0
     typealias_lines_added: int = 0
+    changed_line_refs: list[str] = field(default_factory=list)  # file://path:line per changed line
     wildcard_hits: list[tuple[str, str]] = field(default_factory=list)  # (file://url, reason)
     fq_not_changed: list[tuple[str, str]] = field(default_factory=list)  # (file://url, reason)
 
@@ -278,10 +356,13 @@ def migrate_project(
     mapping_csv: Path,
     *,
     write: bool,
+    filter_source_sets: bool = True,
 ) -> MigrationStats:
     mappings, source_pkgs = load_mapping_csv(mapping_csv)
 
-    kt_files = source_paths.collect(project, SOURCE_SET_NAMES)
+    kt_files = collect(
+        project, SOURCE_SET_NAMES, filter_source_sets=filter_source_sets
+    )
     stats = MigrationStats()
     # Same ``(alias, rhs)`` must not be emitted in multiple ``package`` compilation units; skip
     # duplicates after the first file (same pattern as duplicate imports across demo samples).
@@ -310,6 +391,7 @@ def migrate_project(
             if new_line is not None:
                 out.append(new_line)
                 stats.lines_changed += 1
+                stats.changed_line_refs.append(file_ref(kt, lineno))
             else:
                 out.append(line)
 
@@ -323,6 +405,8 @@ def migrate_project(
                     out = out[: li + 1] + alias_lines + out[li + 1 :]
                     stats.typealias_lines_added += len(alias_lines)
                     stats.lines_changed += len(alias_lines)
+                    for j in range(len(alias_lines)):
+                        stats.changed_line_refs.append(file_ref(kt, li + 2 + j))
 
         if write and "".join(out) != text:
             kt.write_text("".join(out), encoding="utf-8")
@@ -333,6 +417,8 @@ def migrate_project(
 def report(stats: MigrationStats) -> None:
     print("--- Migration report ---", file=sys.stderr)
     print(f"Lines changed: {stats.lines_changed}", file=sys.stderr)
+    for ref in stats.changed_line_refs:
+        print(f"  {ref}", file=sys.stderr)
     print(f"FQ imports rewritten: {stats.fq_replaced}", file=sys.stderr)
     print(f"Typealias lines added: {stats.typealias_lines_added}", file=sys.stderr)
     print(f"Wildcard imports (warnings): {len(stats.wildcard_hits)}", file=sys.stderr)
@@ -384,6 +470,14 @@ def main() -> None:
         action="store_true",
         help="Report only; do not modify .kt files (default is to apply changes).",
     )
+    ap.add_argument(
+        "--all-kt",
+        action="store_true",
+        help=(
+            "Do not restrict to OH source-set directories (config.SOURCE_SET_NAMES); "
+            "consider every .kt file under --project."
+        ),
+    )
     args = ap.parse_args()
 
     mapping_csv = resolve_mapping_csv(args.source_version, args.target_version)
@@ -405,7 +499,12 @@ def main() -> None:
     print(f"Using mapping: {mapping_csv.resolve()}", file=sys.stderr)
     if args.dry_run:
         print("Dry run: no files will be modified.", file=sys.stderr)
-    stats = migrate_project(args.project, mapping_csv, write=not args.dry_run)
+    stats = migrate_project(
+        args.project,
+        mapping_csv,
+        write=not args.dry_run,
+        filter_source_sets=not args.all_kt,
+    )
     report(stats)
     if not args.dry_run:
         print(f"wrote changes where applicable under {args.project.resolve()}", file=sys.stderr)

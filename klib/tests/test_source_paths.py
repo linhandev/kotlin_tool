@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from klib.source_paths import collect
+from klib.migrate import collect
 
 
 class SourcePathsTest(unittest.TestCase):
@@ -26,6 +26,21 @@ class SourcePathsTest(unittest.TestCase):
             self.assertEqual(
                 rels_b,
                 ["src/commonMain/kotlin/A.kt", "src/jvmMain/kotlin/B.kt"],
+            )
+
+    def test_filter_source_sets_false_includes_all_kt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src" / "commonMain" / "kotlin").mkdir(parents=True)
+            (root / "src" / "commonMain" / "kotlin" / "A.kt").write_text("x", encoding="utf-8")
+            (root / "other" / "nested").mkdir(parents=True)
+            (root / "other" / "nested" / "C.kt").write_text("z", encoding="utf-8")
+
+            paths = collect(root, ["ohosMain"], filter_source_sets=False)
+            rels = sorted(p.relative_to(root).as_posix() for p in paths)
+            self.assertEqual(
+                rels,
+                ["other/nested/C.kt", "src/commonMain/kotlin/A.kt"],
             )
 
     def test_empty_source_set_names_returns_empty(self) -> None:

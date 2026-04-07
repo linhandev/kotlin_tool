@@ -1,6 +1,6 @@
 # klib tools
 
-Small utilities around Kotlin/Native **`.klib`** metadata, focused on comparing what two compiler snapshots expose on a platform (for example `ohos_arm64`).
+Small utilities around Kotlin/Native `**.klib**` metadata, focused on comparing what two compiler snapshots expose on a platform (for example `ohos_arm64`).
 
 ## Mapping (`mapping.py`)
 
@@ -16,11 +16,13 @@ Small utilities around Kotlin/Native **`.klib`** metadata, focused on comparing 
 
 **Row status.**
 
-| Status | Meaning |
-|--------|---------|
-| `mapped` | Exactly one target FQ name for this declaration path (across target packages/klibs), or resolved by disambiguation. |
-| `ambiguous` | More than one target FQ name; `target_fqname` is `|`‑separated sorted candidates. |
-| `missing` | No target package defines this declaration path. |
+
+| Status      | Meaning                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `mapped`    | Exactly one target FQ name for this declaration path (across target packages/klibs), or resolved by disambiguation. |
+| `ambiguous` | More than one target FQ name; `target_fqname` is `                                                                  |
+| `missing`   | No target package defines this declaration path.                                                                    |
+
 
 **Output.** `mappings/mapping-{source compilerVersion}-to-{target compilerVersion}.csv`, with columns: `source_klib`, `source_package`, `declaration`, `status`, `target_fqname`. Compiler versions are read from each prebuilt’s `konan/konan.properties` (`compilerVersion`), using the path layout expected by `get_compiler_version()` (platform klib dir → prebuilt root → `konan/konan.properties`).
 
@@ -28,8 +30,8 @@ Small utilities around Kotlin/Native **`.klib`** metadata, focused on comparing 
 
 ## Related scripts
 
-- **`declarations.py`** — Same dump pipeline; can aggregate unique declaration paths and package lists into `declarations.csv` (target tree only, per its `main`).
-- **`source_paths.py`** — `collect()` for Kotlin source path collection (see that file for scope).
+- `**declarations.py`** — Same dump pipeline; can aggregate unique declaration paths and package lists into `declarations.csv` (target tree only, per its `main`).
+- `**migrate.py`** — `collect()` for Kotlin source path collection (same module as import migration).
 
 ## Running
 
