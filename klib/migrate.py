@@ -31,7 +31,6 @@ from typing import Iterable
 
 from config import (
     MIGRATING_PROJECT,
-    SOURCE_COMPILER_VERSION,
     SOURCE_SET_NAMES,
     TARGET_COMPILER_VERSION,
 )
@@ -456,8 +455,10 @@ def main() -> None:
     ap.add_argument(
         "--source-version",
         metavar="VER",
-        default=SOURCE_COMPILER_VERSION,
-        help=f"Source Kotlin/Native compilerVersion (default: {SOURCE_COMPILER_VERSION})",
+        default="2.0.21-KBA-014",
+        help=(
+            "Source Kotlin/Native compilerVersion (default: 2.0.21-KBA-014, KBA-014)"
+        ),
     )
     ap.add_argument(
         "--target-version",
