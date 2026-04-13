@@ -3,7 +3,7 @@ from pathlib import Path
 MIGRATING_PROJECT = "/Users/ohoskt/git/ci/kotlinx-coroutines"
 SOURCE_SET_NAMES = ["ohosMain", "ohosArm64Main", "ohosX64Main", "nativeOhos"]
 SOURCE_COMPILER_VERSION = "2.0.21-KBA-014"
-TARGET_COMPILER_VERSION = "2.2.21-EZ.0.2.0-05"
+TARGET_COMPILER_VERSION = "2.2.21-0.2.0-01"
 
 ''' used for maping generation only '''
 KLIB = f"~/.konan/kotlin-native-prebuilt-macos-aarch64-{TARGET_COMPILER_VERSION}/bin/klib"
